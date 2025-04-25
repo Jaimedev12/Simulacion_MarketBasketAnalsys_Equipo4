@@ -1,0 +1,26 @@
+[
+    [
+        {'type': 'entrance'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'exit'}
+    ], 
+    [
+        {'type': 'shelf', 'category': 'Snacks', 'impulsivity': 0.8}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}
+    ], 
+    [
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}
+    ], 
+    [
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}, 
+        {'type': 'pasillo'}
+    ]
+]
