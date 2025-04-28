@@ -1,11 +1,18 @@
 import csv
 import json
+import sys
+import os
+# Add the parent directory to the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config as cfg
 
 # Modified version to create dictionary with aisle_id as keys
 def main():
     # Define file paths
-    input_path = "../data/aisle_impulse_index.csv"
-    output_path = "../data/aisle_impulse_index.json"
+    input_path = "../data/" + cfg.AISLE_IMPULSE_FILENAME + ".csv"
+    output_path = "../data/" + cfg.AISLE_IMPULSE_FILENAME + ".json"
+
+
     
     # Read CSV data
     data = {}

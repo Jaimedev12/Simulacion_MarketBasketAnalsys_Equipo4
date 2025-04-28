@@ -1,9 +1,14 @@
 import json
 import numpy as np
+import sys
+import os
+# Add the parent directory to the path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config as cfg
 
 def main():
     # Load aisle data
-    with open("../data/aisle_impulse_index.json", 'r') as file:
+    with open("../" + cfg.AISLE_INFO_FILE, 'r') as file:
         aisles_data = json.load(file)
     
     # Determine dimensions for a realistic supermarket layout

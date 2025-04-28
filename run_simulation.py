@@ -15,9 +15,9 @@ def main():
         tabu_size=cfg.TABU_SIZE
     )
 
-    print(best_layout.grid)
-    print(best_shopping_score)
-    print(best_effort_score)
+    # print(best_layout.grid)
+    # print(best_shopping_score)
+    # print(best_effort_score)
     
     # # Guardar resultados
     # save_layout(SupermarketGrid.from_dict(best_layout), "optimized_layout.json")

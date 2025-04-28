@@ -1,7 +1,9 @@
 # Configuración del proyecto
 DATA_DIR = "data"
+AISLE_IMPULSE_FILENAME = "aisle_impulse_index"
+
 LAYOUT_FILE = f"{DATA_DIR}/example_layout.json"
-AISLE_INFO_FILE = f"{DATA_DIR}/aisle_impulse_index.json"
+AISLE_INFO_FILE = f"{DATA_DIR}/{AISLE_IMPULSE_FILENAME}.json"
 CUSTOMERS_FILE = f"{DATA_DIR}/customers.json"
 TABU_ITERATIONS = 1
 TABU_SIZE = 1
