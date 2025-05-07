@@ -1,17 +1,25 @@
 import json
 import networkx as nx
+from typing import List, Dict, Tuple, Optional, Any, TypedDict
+
+# Define the structure of each aisle info entry
+class AisleInfoDict(TypedDict):
+    impulse_index: float
+    name: str
+    cells: List[Tuple[int, int]]
 
 class SupermarketGrid:
-    def __init__(self, rows, cols):
-        self.rows = rows
-        self.cols = cols
-        self.grid = [[0 for _ in range(cols)] for _ in range(rows)]
-        self.aisle_info = {}
-        self.entrance = None
-        self.exit = None
+    def __init__(self, rows: int, cols: int) -> None:
+        self.rows: int = rows
+        self.cols: int = cols
+        self.grid: List[List[int]] = [[0 for _ in range(cols)] for _ in range(rows)]
+        self.aisle_info: Dict[int, AisleInfoDict] = {}
+        self.entrance: Optional[Tuple[int, int]] = None
+        self.exit: Optional[Tuple[int, int]] = None
+        self.item_to_cells: Dict[int, List[Tuple[int, int]]] = {}  # Initialize here
 
     @classmethod
-    def from_file(cls, layout_filename, impulse_index_filename):
+    def from_file(cls, layout_filename: str, impulse_index_filename: str) -> 'SupermarketGrid':
         """
         Carga el layout desde un archivo JSON y la información de impulso desde otro archivo JSON.
         
@@ -21,42 +29,41 @@ class SupermarketGrid:
         """
         # Cargar el archivo de layout
         with open(layout_filename, 'r') as f:
-            layout_data = json.load(f)
+            layout_data: Dict[str, Any] = json.load(f)
         
         # Cargar el archivo de índices de impulso
         with open(impulse_index_filename, 'r') as f:
-            impulse_data = json.load(f)
+            impulse_data: Dict[str, Dict[str, Any]] = json.load(f)
         
         # Crear la instancia del grid
-        grid = cls(layout_data["rows"], layout_data["cols"])
-        
-        # Inicializar item_to_cells si no existe
-        if not hasattr(grid, 'item_to_cells'):
-            grid.item_to_cells = {}
+        grid: 'SupermarketGrid' = cls(layout_data["rows"], layout_data["cols"])
         
         # Cargar información de pasillos desde el archivo de impulso
         grid.aisle_info = {}
         for aisle_id, info in impulse_data.items():
             grid.aisle_info[int(aisle_id)] = {
-                'impulse_index': info['impulse_index'],
-                'name': info['aisle_name']
+                "impulse_index": info['impulse_index'],
+                "name": info['aisle_name'],
+                "cells": []
             }
         
         # Procesar el grid
         for row in range(grid.rows):
             for col in range(grid.cols):
-                cell_value = layout_data["grid"][row][col]
+                cell_value: int = layout_data["grid"][row][col]
                 
                 # Guardar el valor en el grid
                 grid.grid[row][col] = cell_value
                 
                 # Procesar basado en el tipo de celda
-                if cell_value > 0:  # No es un pasillo
-                    aisle_id = cell_value
+                if cell_value > 0:  # Es un pasillo
                     # Mapear categoría a celdas
-                    if "cells" not in grid.aisle_info[aisle_id]:
-                        grid.aisle_info[aisle_id]["cells"] = []
-                    grid.aisle_info[aisle_id]["cells"].append((row, col))
+                    grid.aisle_info[cell_value]["cells"].append((row, col))
+                    
+                    # Actualizar item_to_cells para búsqueda rápida
+                    if cell_value not in grid.item_to_cells:
+                        grid.item_to_cells[cell_value] = []
+                    grid.item_to_cells[cell_value].append((row, col))
                 elif cell_value == -1:  # Es la entrada
                     grid.entrance = (row, col)
                 elif cell_value == -2:  # Es la salida
@@ -75,7 +82,7 @@ class SupermarketGrid:
         return grid
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: Dict[str, Any]) -> 'SupermarketGrid':
         """Creates a SupermarketGrid from a dictionary representation"""
         grid = cls(data["rows"], data["cols"])
         
@@ -99,20 +106,20 @@ class SupermarketGrid:
         print(grid.grid)
         return grid
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """Verifica que exista un camino entre entrada y salida"""
         if not self.entrance or not self.exit:
             return False
         G = self._build_graph()
         return nx.has_path(G, self.entrance, self.exit)
 
-    def _build_graph(self):
+    def _build_graph(self) -> nx.Graph:
         """
         Construye un grafo de NetworkX a partir del grid.
         Los nodos son las celdas transitables (valor 0, entrada -1, o salida -2).
         Las aristas conectan celdas transitables adyacentes.
         """
-        G = nx.Graph()
+        G: nx.Graph = nx.Graph()
         
         # Agrega todos los nodos transitables (corredores, entrada, salida)
         for x in range(self.rows):
@@ -139,7 +146,7 @@ class SupermarketGrid:
         
         return G
 
-    def get_closest_cell(self, current_pos, target_category):
+    def get_closest_cell(self, current_pos: Tuple[int, int], target_category: int) -> Optional[Tuple[int, int]]:
         """Encuentra la celda más cercana de una categoría"""
         if target_category not in self.item_to_cells:
             return None
@@ -150,7 +157,7 @@ class SupermarketGrid:
         )
         return closest
 
-    def get_path(self, start, end):
+    def get_path(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
         """Calcula la ruta óptima con NetworkX"""
         G = self._build_graph()
         try:
@@ -158,17 +165,12 @@ class SupermarketGrid:
         except nx.NetworkXNoPath:
             return None
 
-    def to_dict(self):
-        """Convierte el grid a formato JSON serializable"""
-        cells = []
-        for x in range(self.rows):
-            for y in range(self.cols):
-                cell = self.grid[x][y].copy()
-                cell["row"] = x
-                cell["col"] = y
-                cells.append(cell)
+    def to_dict(self) -> Dict[str, Any]:
+        """Convierte el grid a formato JSON serializable con la estructura de enteros"""
         return {
             "rows": self.rows,
             "cols": self.cols,
-            "cells": cells
+            "grid": self.grid,
+            "entrance": self.entrance,
+            "exit": self.exit
         }

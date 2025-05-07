@@ -7,13 +7,16 @@ def main():
     # Cargar datos
     initial_grid = SupermarketGrid.from_file(cfg.LAYOUT_FILE, cfg.AISLE_INFO_FILE)
     customers = load_customers(cfg.CUSTOMERS_FILE)
+
     
     # Optimizar
     optimizer = TabuSearchOptimizer(initial_grid, customers)
-    best_layout, best_shopping_score, best_effort_score = optimizer.optimize(
-        iterations=cfg.TABU_ITERATIONS,
-        tabu_size=cfg.TABU_SIZE
-    )
+    result = optimizer.evaluate_solution(initial_grid)
+    print(f"Initial evaluation: {result}")
+    # best_layout, best_shopping_score, best_effort_score = optimizer.optimize(
+    #     iterations=cfg.TABU_ITERATIONS,
+    #     tabu_size=cfg.TABU_SIZE
+    # )
 
     # print(best_layout.grid)
     # print(best_shopping_score)
