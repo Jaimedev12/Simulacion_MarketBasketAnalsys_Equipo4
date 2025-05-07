@@ -1,7 +1,4 @@
-{
-    "rows": 37,
-    "cols": 30,
-    "grid": [
+grid = [
         [
             0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, -2, 0, 0, 0, 0
@@ -150,7 +147,26 @@
             0, 134, 134, 134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0
         ]
-    ],
-    "entrance": [0, 5],
-    "exit": [0, 25]
-}
+    ]
+
+def display_layout(layout):
+    """
+    Desplegar la distribución de la tienda en la consola.
+    :param layout: Lista de listas que representa la distribución de la tienda.
+    """
+    for row in layout:
+        for cell in row:
+            if cell == 0:
+                print("{:>3}".format(" "), end=" ")
+            elif cell == -1:
+                print("{:>3}".format("X"), end=" ")
+            elif cell == -2:
+                print("{:>3}".format("C"), end=" ")
+            else:
+                print("{:>3}".format(cell), end=" ")
+        print()
+
+
+if __name__ == "__main__":
+    # Ejemplo de uso
+    display_layout(grid)
