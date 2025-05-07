@@ -9,8 +9,8 @@ import config as cfg
 # Modified version to create dictionary with aisle_id as keys
 def main():
     # Define file paths
-    input_path = "../data/" + cfg.AISLE_IMPULSE_FILENAME + ".csv"
-    output_path = "../data/" + cfg.AISLE_IMPULSE_FILENAME + ".json"
+    input_path = "../data/" + cfg.AISLE_INFO_FILENAME + ".csv"
+    output_path = "../data/" + cfg.AISLE_INFO_FILENAME + ".json"
 
 
     
@@ -23,9 +23,12 @@ def main():
             aisle_id = int(row['aisle_id'])
             del row['aisle_id']
             del row['impulse_index_normalized']
+
             row['aisle_name'] = str(row['aisle'])
             del row['aisle']
+
             row['impulse_index'] = float(row['impulse_index'])
+            row['product_count'] = int(row['product_count'])
             data[aisle_id] = row
     
     # Write JSON data
