@@ -1,9 +1,0 @@
-{
-    "rows": 4,
-    "cols": 4,
-    "cells": [
-      {"row": 0, "col": 0, "type": "entrance"},
-      {"row": 0, "col": 3, "type": "exit"},
-      {"row": 1, "col": 0, "type": "shelf", "category": "Snacks", "impulsivity": 0.8}
-    ]
-  }

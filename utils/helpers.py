@@ -1,6 +1,6 @@
 import json
 
-def load_customers(filename):
+def load_shopping_lists(filename):
     """Carga listas de compras desde un JSON"""
     with open(filename, 'r') as f:
         return json.load(f)
