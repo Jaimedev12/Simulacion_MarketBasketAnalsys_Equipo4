@@ -483,6 +483,51 @@ def save_grid_to_json(grid, filename, grid_attributes):
             "exit": grid_attributes["exit_coords"],
         }, file, indent=4)
 
+def swap_n_shelves(grid, n):
+    """
+    Intercambiar n pares de celdas en la cuadrícula. El intercambio puede ser entre:
+    - Dos estanterías.
+    - Una estantería y un pasillo.
+    No se permite intercambiar la entrada, la salida, ni dos pasillos.
+    Si un intercambio no es válido, no se cuenta como uno de los n intercambios.
+    :param grid: Cuadrícula a modificar.
+    :param n: Número de intercambios a realizar.
+    """
+    rows = len(grid)
+    cols = len(grid[0]) if rows > 0 else 0
+
+    # Get all valid positions (exclude entrance and exit)
+    valid_positions = [(i, j) for i in range(rows) for j in range(cols) if grid[i][j] != -1 and grid[i][j] != -2]
+
+    swaps_done = 0
+    while swaps_done < n:
+        # Randomly select two distinct positions
+        pos1, pos2 = random.sample(valid_positions, 2)
+
+        # Get the values at the selected positions
+        val1, val2 = grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]]
+
+        # Ensure the swap is meaningful (not between two aisles)
+        if val1 == 0 and val2 == 0:
+            continue  # Skip this swap as it's pointless
+
+        # Perform the swap
+        grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]] = val2, val1
+
+        # Validate the grid after the swap
+        if not validate_layout(grid):
+            # If invalid, undo the swap
+            grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]] = val1, val2
+            print(f"Intercambio inválido entre {pos1} y {pos2}. Revertido.")
+        else:
+            # If valid, count the swap
+            swaps_done += 1
+            print(f"Intercambio válido entre {pos1} y {pos2}.")
+
+    return grid
+
+    
+
 def generate_n_random_grids(n, grid_attributes, should_plot=False):
     """
     Generar n cuadrículas aleatorias y guardarlas en archivos JSON.
@@ -500,4 +545,8 @@ def generate_n_random_grids(n, grid_attributes, should_plot=False):
 if __name__ == "__main__":
     grid_attributes = calculate_grid_dimensions()
     
-    generate_n_random_grids(1, grid_attributes, True)
+    # generate_n_random_grids(1, grid_attributes, True)
+    grid = generate_random_grid(grid_attributes)
+    plot_grid_with_ids(grid)
+    grid_2 = swap_n_shelves(grid, 30)
+    plot_grid_with_ids(grid_2)
