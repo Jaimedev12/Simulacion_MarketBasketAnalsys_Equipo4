@@ -218,8 +218,12 @@ def plot_grid(grid):
     plt.title("Distribución de la Tienda")
     plt.show()
 
-def plot_grid_with_ids(grid):
-    """Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados."""
+def generate_individual_plot(grid, ax=None):
+    """
+    Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados.
+    :param grid: La cuadrícula a visualizar.
+    :param ax: El eje de matplotlib donde se dibujará la cuadrícula. Si es None, se crea una nueva figura.
+    """
     rows = len(grid)
     cols = len(grid[0]) if rows > 0 else 0
     matrix = np.zeros((rows, cols))
@@ -246,17 +250,29 @@ def plot_grid_with_ids(grid):
             cell = grid[x][y]
             matrix[x][y] = cell if cell >= 0 else max_value + abs(cell)  # Map negative values to unique indices
 
-    plt.imshow(matrix, cmap=cmap, interpolation="nearest")
-    plt.colorbar()
-    plt.title("Distribución de la Tienda (con IDs)")
+    # Plot on the provided axis or create a new figure
+    if ax is None:
+        fig, ax = plt.subplots()
+    im = ax.imshow(matrix, cmap=cmap, interpolation="nearest")
+    ax.set_title("Distribución de la Tienda (con IDs)")
+    ax.axis("off")
 
     # Overlay IDs on the grid
     for x in range(rows):
         for y in range(cols):
             cell = grid[x][y]
             if cell != 0:  # Only display IDs for non-pasillo cells
-                plt.text(y, x, str(cell), ha="center", va="center", color="black", fontsize=8)
+                ax.text(y, x, str(cell), ha="center", va="center", color="black", fontsize=8)
 
+    return im
+
+def plot_grid_with_ids(grid):
+    """
+    Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados.
+    :param grid: La cuadrícula a visualizar.
+    """
+    fig, ax = plt.subplots(figsize=(10, 10))
+    generate_individual_plot(grid, ax=ax)
     plt.show()
 
 def plot_grid_difference(grid1, grid2):
@@ -278,25 +294,23 @@ def plot_grid_difference(grid1, grid2):
                 difference_grid[i][j] = 0  # Mark no differences with 0
 
     # Create the figure with 3 subplots
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
-    # Plot grid1
-    axes[0].imshow(grid1, cmap="viridis", interpolation="nearest")
+    # Plot grid1 using plot_grid_with_ids
+    generate_individual_plot(grid1, ax=axes[0])
     axes[0].set_title("Grid 1 (Original)")
-    axes[0].axis("off")
 
-    # Plot grid2
-    axes[1].imshow(grid2, cmap="viridis", interpolation="nearest")
+    # Plot grid2 using plot_grid_with_ids
+    generate_individual_plot(grid2, ax=axes[1])
     axes[1].set_title("Grid 2 (Modified)")
-    axes[1].axis("off")
 
     # Plot the difference grid
-    axes[2].imshow(difference_grid, cmap="coolwarm", interpolation="nearest")
+    im = axes[2].imshow(difference_grid, cmap="coolwarm", interpolation="nearest")
     axes[2].set_title("Diferencias (1 = Diferente, 0 = Igual)")
     axes[2].axis("off")
 
     # Add a colorbar for the difference grid
-    cbar = fig.colorbar(plt.cm.ScalarMappable(cmap="coolwarm"), ax=axes[2], orientation="vertical", fraction=0.046, pad=0.04)
+    cbar = fig.colorbar(im, ax=axes[2], orientation="vertical", fraction=0.046, pad=0.04)
     cbar.set_label("Diferencias")
 
     plt.tight_layout()
@@ -527,7 +541,7 @@ def save_grid_to_json(grid, filename, grid_attributes):
             "exit": grid_attributes["exit_coords"],
         }, file, indent=4)
 
-def swap_n_shelves(grid, n):
+def swap_n_shelves(grid, n, overwrite=False):
     """
     Intercambiar n pares de celdas en la cuadrícula. El intercambio puede ser entre:
     - Dos estanterías.
@@ -537,7 +551,10 @@ def swap_n_shelves(grid, n):
     :param grid: Cuadrícula a modificar.
     :param n: Número de intercambios a realizar.
     """
-    new_grid = deepcopy(grid)
+    if overwrite:
+        new_grid = grid
+    else:
+        new_grid = deepcopy(grid)
 
     rows = len(new_grid)
     cols = len(new_grid[0]) if rows > 0 else 0
@@ -571,8 +588,6 @@ def swap_n_shelves(grid, n):
             print(f"Intercambio válido entre {pos1} y {pos2}.")
 
     return new_grid
-
-    
 
 def generate_n_random_grids(n, grid_attributes, should_plot=False):
     """
