@@ -280,9 +280,15 @@ def calculate_grid_dimensions():
     # Obtener la cantidad de celdas de pasillo necesarias
     aisle_lengths, needed_shelves_cells = calculate_aisle_length()
 
-    padding = cfg.GRID_PADDING
-    rows = math.ceil(math.sqrt(needed_shelves_cells)) + padding
-    cols = math.ceil(needed_shelves_cells / rows) + padding
+    multiplier = cfg.GRID_DIMENSIONS_MULTIPLIER
+    cols = math.ceil(math.sqrt(needed_shelves_cells))
+    rows = math.ceil(needed_shelves_cells / cols) 
+
+    # Aumentar las dimensiones de la cuadrícula para incluir pasillos
+    rows = rows * multiplier
+    cols = cols * multiplier
+
+    print(f"Grid dimensions: {rows} x {cols}")
 
     # Place the entrance and exit both in the first row, one in the first
     # quarter and the other in the last quarter of the row 
@@ -320,6 +326,48 @@ def calculate_aisle_length():
     
     return shelves_lengths, needed_cells
 
+def place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob):
+    """
+    Recursive function to place shelves in the grid.
+    :param grid: The grid where shelves are being placed.
+    :param available_positions: List of available positions.
+    :param aisle_id: The ID of the aisle being placed.
+    :param placed: Number of shelves already placed for this aisle.
+    :param length: Total number of shelves to place for this aisle.
+    :param adjacency_prob: Probability of placing an adjacent shelf.
+    :return: Updated number of shelves placed.
+    """
+    if placed >= length or not available_positions:
+        return placed
+
+    is_valid = False
+    while (not is_valid):
+        # Choose a random position from available positions
+        row, col = random.choice(available_positions)
+        grid[row][col] = int(aisle_id)
+        # Check if placing shelf in the position keeps the layout valid
+        is_valid = validate_layout(grid)
+        if not is_valid:
+            grid[row][col] = 0  # Reset the position if invalid
+        else:
+            break
+        
+    # If valid, mark the position as occupied
+    available_positions.remove((row, col))  # Remove the used position
+    placed += 1
+    print(f"Placing aisle {aisle_id} at ({row}, {col}). Remaining: {length - placed}")
+
+    # Attempt to place adjacent shelves based on adjacency probability
+    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+        if random.random() < adjacency_prob:
+            adj_row, adj_col = row + dx, col + dy
+            if (adj_row, adj_col) in available_positions:
+                placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
+                if placed >= length:
+                    break
+
+    return placed
+
 def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coords):
     """
     Generar una cuadrícula aleatoria con pasillos y estanterías. Las estanterías
@@ -332,18 +380,45 @@ def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coor
     """
     rows, cols = dimensions
     grid = [[0] * cols for _ in range(rows)]
+    # Probabilidad de que cuando se coloque una estantería de un tipo, se
+    # coloque otra estantería de ese mismo tipo al lado en vez de en una
+    # posición aleatoria
+    adjacency_prob = cfg.ADJACENCY_PROBABILITY
 
+    # Colocar la entrada y salida
+    grid[entrance_coords[0]][entrance_coords[1]] = -2  # Entrada
+    grid[exit_coords[0]][exit_coords[1]] = -1  # Salida
+
+    # Colocar estanterías
+    available_positions = [(row, col) for row in range(rows) for col in range(cols) if grid[row][col] == 0]
+    
+    for aisle_id, length in shelves_lengths.items():
+        if length > 0:
+            placed = 0
+            print(f"Placing aisle {aisle_id}. Total cells to place: {length}")
+            placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
+
+    # Colocar pasillos (0) en las celdas vacías
+    for i in range(rows):
+        for j in range(cols):
+            if grid[i][j] == 0:
+                grid[i][j] = 0
     
     return grid
 
 if __name__ == "__main__":
     # Ejemplo de uso
-    display_layout(grid)
+    # display_layout(grid)
 
+
+    grid_attributes = calculate_grid_dimensions()
+    print(grid_attributes)
+    grid = generate_random_grid(grid_attributes["aisle_lengths"], grid_attributes["dimensions"],
+                                 grid_attributes["entrance_coords"], grid_attributes["exit_coords"])
+    print("Grid generated")
+    display_layout(grid)
     if validate_layout(grid):
         print("La distribución es válida.")
     else:
         print("La distribución no es válida.")
-
-    grid_attributes = calculate_grid_dimensions()
-    print(grid_attributes)
+    plot_grid(grid)
