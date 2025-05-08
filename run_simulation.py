@@ -14,7 +14,7 @@ def main():
     for shopping_list in shopping_lists:
         customer = CustomerSimulator(shopping_list)
         customers.append(customer)
-
+        
     for customer in customers:
         result = customer.simulate(initial_grid)
         print(result)

@@ -30,7 +30,7 @@ class SupermarketGrid:
         self.aisle_info: Dict[int, AisleInfo] = {}
         self.entrance: Tuple[int, int] = (0, 0)
         self.exit: Tuple[int, int] = (0, 0)
-        self.item_to_cells: Dict[int, List[Tuple[int, int]]] = {}  # Initialize here
+        self.graph: nx.Graph
 
     @classmethod
     def from_file(cls, layout_filename: str, impulse_index_filename: str) -> 'SupermarketGrid':
@@ -73,10 +73,6 @@ class SupermarketGrid:
                     # Mapear categoría a celdas
                     grid.aisle_info[aisle_id].cells.append((row, col))
                     
-                    # Actualizar item_to_cells para búsqueda rápida
-                    if aisle_id not in grid.item_to_cells:
-                        grid.item_to_cells[aisle_id] = []
-                    grid.item_to_cells[aisle_id].append((row, col))
                 elif aisle_id == -1:  # Es la entrada
                     grid.entrance = (row, col)
                 elif aisle_id == -2:  # Es la salida
@@ -107,31 +103,8 @@ class SupermarketGrid:
                 end = start + step_size if i < len(info.cells) - 1 else info.product_count+1
                 cell_info.product_id_range = (start, end)
     
-        return grid
+        cls._build_graph(grid)
 
-    # @classmethod
-    # def from_dict(cls, data: Dict[str, Any]) -> 'SupermarketGrid':
-        """Creates a SupermarketGrid from a dictionary representation"""
-        grid = cls(data["rows"], data["cols"])
-        
-        for cell_data in data["cells"]:
-            x, y = cell_data["row"], cell_data["col"]
-            # Make a copy of the cell data without row/col keys
-            cell_copy = {k: v for k, v in cell_data.items() if k not in ["row", "col"]}
-            grid.grid[x][y] = cell_copy
-            
-            if cell_data["type"] == "shelf" and "category" in cell_data:
-                category = cell_data["category"]
-                if category not in grid.item_to_cells:
-                    grid.item_to_cells[category] = []
-                grid.item_to_cells[category].append((x, y))
-            
-            if cell_data["type"] == "entrance":
-                grid.entrance = (x, y)
-            if cell_data["type"] == "exit":
-                grid.exit = (x, y)
-        
-        print(grid.grid)
         return grid
 
     def is_connected(self) -> bool:
@@ -172,18 +145,8 @@ class SupermarketGrid:
                             if neighbor_cell.is_walkable:
                                 G.add_edge((x, y), (nx_pos, ny_pos))
         
+        self.graph = G  # Guardar el grafo en la instancia
         return G
-
-    def get_closest_cell(self, current_pos: Tuple[int, int], target_category: int) -> Optional[Tuple[int, int]]:
-        """Encuentra la celda más cercana de una categoría"""
-        if target_category not in self.item_to_cells:
-            return None
-        candidates = self.item_to_cells[target_category]
-        closest = min(
-            candidates,
-            key=lambda pos: abs(current_pos[0]-pos[0]) + abs(current_pos[1]-pos[1])
-        )
-        return closest
 
     def get_path(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
         """Calcula la ruta óptima con NetworkX"""
