@@ -14,8 +14,6 @@ class TabuSearchOptimizer:
 
     def evaluate_solution(self, solution):
         """Evalúa una solución con simulaciones de clientes"""
-        print("Solution:")
-        print(solution)
         grid = SupermarketGrid.from_dict(solution)
         total = 0
         for customer_list in self.customers_data:
