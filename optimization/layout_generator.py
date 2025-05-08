@@ -403,7 +403,7 @@ def calculate_aisle_length():
     
     return shelves_lengths, needed_cells
 
-def place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob):
+def place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob, position=None):
     """
     Recursive function to place shelves in the grid.
     :param grid: The grid where shelves are being placed.
@@ -412,36 +412,49 @@ def place_shelf_recursively(grid, available_positions, aisle_id, placed, length,
     :param placed: Number of shelves already placed for this aisle.
     :param length: Total number of shelves to place for this aisle.
     :param adjacency_prob: Probability of placing an adjacent shelf.
+    :param position: Specific position to place the shelf (row, col). If None, a random position is selected.
     :return: Updated number of shelves placed.
     """
     if placed >= length or not available_positions:
         return placed
 
-    is_valid = False
-    while (not is_valid):
+    if position:
+        # Use the provided position
+        row, col = position
+    else:
         # Choose a random position from available positions
         row, col = random.choice(available_positions)
-        grid[row][col] = int(aisle_id)
-        # Check if placing shelf in the position keeps the layout valid
-        is_valid = validate_layout(grid)
-        if not is_valid:
-            grid[row][col] = 0  # Reset the position if invalid
+
+    # Validate the position
+    grid[row][col] = int(aisle_id)
+    if not validate_layout(grid):
+        grid[row][col] = 0  # Reset the position if invalid
+        if position:
+            return placed  # Return without placing if a specific position was invalid
         else:
-            break
+            # If no specific position was provided, try another random position
+            return place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
 
     # If valid, mark the position as occupied
     available_positions.remove((row, col))  # Remove the used position
     placed += 1
-    print(f"Placing aisle {aisle_id} at ({row}, {col}). Remaining: {length - placed}")
+    # print(f"Placing aisle {aisle_id} at ({row}, {col}). Remaining: {length - placed}")
 
     # Attempt to place adjacent shelves based on adjacency probability
     for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
         if random.random() < adjacency_prob:
             adj_row, adj_col = row + dx, col + dy
             if (adj_row, adj_col) in available_positions:
-                placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
+                placed = place_shelf_recursively(
+                    grid, available_positions, aisle_id, placed, length, adjacency_prob, position=(adj_row, adj_col)
+                )
                 if placed >= length:
                     break
+
+    if placed < length:
+        placed = place_shelf_recursively(
+            grid, available_positions, aisle_id, placed, length, adjacency_prob
+        )
 
     return placed
 
@@ -472,7 +485,7 @@ def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coor
     for aisle_id, length in shelves_lengths.items():
         if length > 0:
             placed = 0
-            print(f"Placing aisle {aisle_id}. Total cells to place: {length}")
+            # print(f"Placing aisle {aisle_id}. Total cells to place: {length}")
             placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
 
     # Colocar pasillos (0) en las celdas vacías
