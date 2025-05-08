@@ -1,3 +1,14 @@
+import json
+import math
+import random
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import config as cfg
+
+
 grid = [
         [
             0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -182,6 +193,30 @@ def display_layout(layout):
                 print("{:^3}".format(cell), end=" ")
         print()
 
+def plot_grid(grid):
+    """Visualiza el layout del supermercado"""
+    rows = len(grid)
+    cols = len(grid[0]) if rows > 0 else 0
+    matrix = np.zeros((rows, cols))
+    
+    for x in range(rows):
+        for y in range(cols):
+            cell = grid[x][y]
+            if cell == 0:
+                matrix[x][y] = 0.0
+            elif cell == -1:
+                matrix[x][y] = 1.0
+            elif cell == -2:
+                matrix[x][y] = 2.0
+            else:
+                matrix[x][y] = 3.0
+    
+    plt.imshow(matrix, cmap="viridis")
+    plt.colorbar()
+    plt.title("Distribución de la Tienda")
+    plt.show()
+
+
 def validate_layout(layout):
     """
     Validar la distribución de la tienda.
@@ -193,7 +228,7 @@ def validate_layout(layout):
     rows = len(layout)
     cols = len(layout[0]) if rows > 0 else 0
     visited_aisle = [[False] * cols for _ in range(rows)]
-    visited_shelf = [[False] * cols for _ in range(rows)]
+    visited_shelves = [[False] * cols for _ in range(rows)]
     queue = []
     # Encontrar la primera casilla de pasillo (0) para iniciar la búsqueda
     for i in range(rows):
@@ -216,8 +251,8 @@ def validate_layout(layout):
             if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout[nx][ny] == 0:
                 visited_aisle[nx][ny] = True
                 queue.append((nx, ny))
-            elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelf[nx][ny] and layout[nx][ny] > 0:
-                visited_shelf[nx][ny] = True
+            elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelves[nx][ny] and layout[nx][ny] > 0:
+                visited_shelves[nx][ny] = True
     
     # Verificar que no haya celdas de pasillo no alcanzadas
     for i in range(rows):
@@ -228,15 +263,87 @@ def validate_layout(layout):
     # Verificar que todas las casillas de pasillo sean alcanzables
     for i in range(rows):
         for j in range(cols):
-            if layout[i][j] > 0 and not visited_shelf[i][j]:
+            if layout[i][j] > 0 and not visited_shelves[i][j]:
                 return False
     
     return True
 
+def calculate_grid_dimensions():
+    """
+    Calcular las dimensiones de la cuadrícula con base en la cantidad de
+    productos que tiene cada uno. Se utilizará la cantidad de celdas de
+    estantería necesarias y se calculará la cantidad de celdas de pasillo
+    necesarias para la cuadrícula.
+    :param needed_shelves_cells: Cantidad de celdas de estantería necesarias.
+    :return: Tupla con las dimensiones de la cuadrícula (x, y).
+    """
+    # Obtener la cantidad de celdas de pasillo necesarias
+    aisle_lengths, needed_shelves_cells = calculate_aisle_length()
+
+    padding = cfg.GRID_PADDING
+    rows = math.ceil(math.sqrt(needed_shelves_cells)) + padding
+    cols = math.ceil(needed_shelves_cells / rows) + padding
+
+    # Place the entrance and exit both in the first row, one in the first
+    # quarter and the other in the last quarter of the row 
+    entrance_coords = (0, cols // 4)
+    exit_coords = (0, cols * 3 // 4)
+
+    return {"dimensions": (rows, cols), "aisle_lengths": aisle_lengths, "entrance_coords": entrance_coords, "exit_coords": exit_coords}
+
+def calculate_aisle_length():
+    """
+    Calcular la longitud de los pasillos con base en la cantidad de productos
+    que tiene cada uno. Se utilizará la longitud máxima de pasillo en la
+    configuración y a partir de ahí se calculará la longitud de cada pasillo.
+    :return: Diccionario con la longitud de cada pasillo y la cantidad de
+    celdas necesarias.
+    """
+    # Obtenemos la longitud máxima de pasillo de la configuración
+    max_aisle_length = cfg.MAX_AISLE_LENGTH
+    # Obtener pasillos con su cantidad de productos de aisle_product_count.json
+    aisle_product_count_filename = cfg.AISLE_PRODUCT_COUNT_FILE
+    aisle_product_count = {}
+    with open(aisle_product_count_filename, 'r') as file:
+        aisle_product_count = json.load(file)
+
+    # Calcular la longitud de cada pasillo
+    shelves_lengths = {}
+    needed_cells = 0
+    for aisle_id, product_count in aisle_product_count.items():
+        if product_count > 0:
+            aisle_length = math.ceil(max_aisle_length * (product_count / max(aisle_product_count.values())))
+            shelves_lengths[aisle_id] = aisle_length
+            needed_cells += aisle_length
+        else:
+            shelves_lengths[aisle_id] = 0
+    
+    return shelves_lengths, needed_cells
+
+def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coords):
+    """
+    Generar una cuadrícula aleatoria con pasillos y estanterías. Las estanterías
+    tienen que tener la longitud de casillas especificada por shelves_lengths.
+    Sin embargo, las cuadrículas de una misma estantería podrían estar
+    separadas, es decir, no necesariamente serán contiguas.
+    :param shelves_lengths: Diccionario con la longitud de cada pasillo.
+    :param dimensions: Dimensiones de la cuadrícula (x, y).
+    :return: Cuadrícula generada aleatoriamente.
+    """
+    rows, cols = dimensions
+    grid = [[0] * cols for _ in range(rows)]
+
+    
+    return grid
+
 if __name__ == "__main__":
     # Ejemplo de uso
     display_layout(grid)
+
     if validate_layout(grid):
         print("La distribución es válida.")
     else:
         print("La distribución no es válida.")
+
+    grid_attributes = calculate_grid_dimensions()
+    print(grid_attributes)
