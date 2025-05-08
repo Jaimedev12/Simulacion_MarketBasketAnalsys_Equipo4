@@ -2,6 +2,7 @@ import json
 import math
 import random
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import numpy as np
 import os
 import sys
@@ -216,6 +217,81 @@ def plot_grid(grid):
     plt.title("Distribución de la Tienda")
     plt.show()
 
+def plot_grid_with_ids(grid):
+    """Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados."""
+    rows = len(grid)
+    cols = len(grid[0]) if rows > 0 else 0
+    matrix = np.zeros((rows, cols))
+    
+    # Define custom colors for specific values
+    custom_colors = {
+        0: "white",    # Pasillo
+        -1: "red",     # Salida
+        -2: "green",   # Entrada
+    }
+    # Generate distinct colors for shelf IDs
+    unique_ids = sorted(set(cell for row in grid for cell in row if cell > 0))
+    for i, shelf_id in enumerate(unique_ids):
+        custom_colors[shelf_id] = plt.cm.tab20(i % 20)  # Use tab20 for shelf IDs
+
+    # Create a colormap from the custom colors
+    max_value = max(custom_colors.keys())
+    color_list = [custom_colors.get(i, "gray") for i in range(max_value + 1)]
+    cmap = ListedColormap(color_list)
+
+    # Fill the matrix with the corresponding values
+    for x in range(rows):
+        for y in range(cols):
+            cell = grid[x][y]
+            matrix[x][y] = cell if cell >= 0 else max_value + abs(cell)  # Map negative values to unique indices
+
+    plt.imshow(matrix, cmap=cmap, interpolation="nearest")
+    plt.colorbar()
+    plt.title("Distribución de la Tienda (con IDs)")
+
+    # Overlay IDs on the grid
+    for x in range(rows):
+        for y in range(cols):
+            cell = grid[x][y]
+            if cell != 0:  # Only display IDs for non-pasillo cells
+                plt.text(y, x, str(cell), ha="center", va="center", color="black", fontsize=8)
+
+    plt.show()
+
+def plot_grid_with_distinct_colors(grid):
+    """Visualiza el layout del supermercado con colores distintos para cada ID."""
+    rows = len(grid)
+    cols = len(grid[0]) if rows > 0 else 0
+    matrix = np.zeros((rows, cols))
+    
+    # Create a colormap for distinct colors
+    unique_ids = sorted(set(cell for row in grid for cell in row if cell > 0))
+    id_to_color = {id_: i + 3 for i, id_ in enumerate(unique_ids)}  # Start from 3 to avoid conflicts with -1, -2, 0
+
+    for x in range(rows):
+        for y in range(cols):
+            cell = grid[x][y]
+            if cell == 0:
+                matrix[x][y] = 0.0  # Pasillo
+            elif cell == -1:
+                matrix[x][y] = 1.0  # Salida
+            elif cell == -2:
+                matrix[x][y] = 2.0  # Entrada
+            elif cell > 0:
+                matrix[x][y] = id_to_color[cell]  # Assign unique color to shelf ID
+
+    cmap = plt.cm.get_cmap("tab20", len(unique_ids) + 3)  # Use tab20 for distinct colors
+    plt.imshow(matrix, cmap=cmap, interpolation="nearest")
+    plt.colorbar(ticks=range(len(unique_ids) + 3), label="Legend")
+    plt.title("Distribución de la Tienda (Colores Distintos)")
+
+    # Add legend for shelf IDs
+    for id_, color_index in id_to_color.items():
+        plt.scatter([], [], color=cmap(color_index / (len(unique_ids) + 3)), label=f"Shelf {id_}")
+    plt.legend(loc="upper right", bbox_to_anchor=(1.3, 1))
+
+    plt.show()
+
 
 def validate_layout(layout):
     """
@@ -281,12 +357,13 @@ def calculate_grid_dimensions():
     aisle_lengths, needed_shelves_cells = calculate_aisle_length()
 
     multiplier = cfg.GRID_DIMENSIONS_MULTIPLIER
+    padding = cfg.GRID_DIMENSIONS_PADDING
     cols = math.ceil(math.sqrt(needed_shelves_cells))
     rows = math.ceil(needed_shelves_cells / cols) 
 
     # Aumentar las dimensiones de la cuadrícula para incluir pasillos
-    rows = rows * multiplier
-    cols = cols * multiplier
+    rows = padding + rows * multiplier
+    cols = padding + cols * multiplier
 
     print(f"Grid dimensions: {rows} x {cols}")
 
@@ -351,7 +428,7 @@ def place_shelf_recursively(grid, available_positions, aisle_id, placed, length,
             grid[row][col] = 0  # Reset the position if invalid
         else:
             break
-        
+
     # If valid, mark the position as occupied
     available_positions.remove((row, col))  # Remove the used position
     placed += 1
@@ -421,4 +498,6 @@ if __name__ == "__main__":
         print("La distribución es válida.")
     else:
         print("La distribución no es válida.")
-    plot_grid(grid)
+    # plot_grid(grid)
+    plot_grid_with_ids(grid)
+    # plot_grid_with_distinct_colors(grid)
