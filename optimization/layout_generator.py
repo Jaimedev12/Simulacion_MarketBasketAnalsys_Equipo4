@@ -8,6 +8,7 @@ import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config as cfg
+from copy import deepcopy
 
 
 grid = [
@@ -258,6 +259,49 @@ def plot_grid_with_ids(grid):
 
     plt.show()
 
+def plot_grid_difference(grid1, grid2):
+    """
+    Visualiza las cuadrículas originales y las diferencias entre ellas en la misma figura.
+    :param grid1: Primera cuadrícula.
+    :param grid2: Segunda cuadrícula.
+    """
+    rows = len(grid1)
+    cols = len(grid1[0]) if rows > 0 else 0
+
+    # Create a difference grid
+    difference_grid = np.zeros((rows, cols))
+    for i in range(rows):
+        for j in range(cols):
+            if grid1[i][j] != grid2[i][j]:
+                difference_grid[i][j] = 1  # Mark differences with 1
+            else:
+                difference_grid[i][j] = 0  # Mark no differences with 0
+
+    # Create the figure with 3 subplots
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    # Plot grid1
+    axes[0].imshow(grid1, cmap="viridis", interpolation="nearest")
+    axes[0].set_title("Grid 1 (Original)")
+    axes[0].axis("off")
+
+    # Plot grid2
+    axes[1].imshow(grid2, cmap="viridis", interpolation="nearest")
+    axes[1].set_title("Grid 2 (Modified)")
+    axes[1].axis("off")
+
+    # Plot the difference grid
+    axes[2].imshow(difference_grid, cmap="coolwarm", interpolation="nearest")
+    axes[2].set_title("Diferencias (1 = Diferente, 0 = Igual)")
+    axes[2].axis("off")
+
+    # Add a colorbar for the difference grid
+    cbar = fig.colorbar(plt.cm.ScalarMappable(cmap="coolwarm"), ax=axes[2], orientation="vertical", fraction=0.046, pad=0.04)
+    cbar.set_label("Diferencias")
+
+    plt.tight_layout()
+    plt.show()
+
 def validate_layout(layout):
     """
     Validar la distribución de la tienda.
@@ -493,11 +537,13 @@ def swap_n_shelves(grid, n):
     :param grid: Cuadrícula a modificar.
     :param n: Número de intercambios a realizar.
     """
-    rows = len(grid)
-    cols = len(grid[0]) if rows > 0 else 0
+    new_grid = deepcopy(grid)
+
+    rows = len(new_grid)
+    cols = len(new_grid[0]) if rows > 0 else 0
 
     # Get all valid positions (exclude entrance and exit)
-    valid_positions = [(i, j) for i in range(rows) for j in range(cols) if grid[i][j] != -1 and grid[i][j] != -2]
+    valid_positions = [(i, j) for i in range(rows) for j in range(cols) if new_grid[i][j] != -1 and new_grid[i][j] != -2]
 
     swaps_done = 0
     while swaps_done < n:
@@ -505,26 +551,26 @@ def swap_n_shelves(grid, n):
         pos1, pos2 = random.sample(valid_positions, 2)
 
         # Get the values at the selected positions
-        val1, val2 = grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]]
+        val1, val2 = new_grid[pos1[0]][pos1[1]], new_grid[pos2[0]][pos2[1]]
 
         # Ensure the swap is meaningful (not between two aisles)
         if val1 == 0 and val2 == 0:
             continue  # Skip this swap as it's pointless
 
         # Perform the swap
-        grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]] = val2, val1
+        new_grid[pos1[0]][pos1[1]], new_grid[pos2[0]][pos2[1]] = val2, val1
 
         # Validate the grid after the swap
-        if not validate_layout(grid):
+        if not validate_layout(new_grid):
             # If invalid, undo the swap
-            grid[pos1[0]][pos1[1]], grid[pos2[0]][pos2[1]] = val1, val2
+            new_grid[pos1[0]][pos1[1]], new_grid[pos2[0]][pos2[1]] = val1, val2
             print(f"Intercambio inválido entre {pos1} y {pos2}. Revertido.")
         else:
             # If valid, count the swap
             swaps_done += 1
             print(f"Intercambio válido entre {pos1} y {pos2}.")
 
-    return grid
+    return new_grid
 
     
 
@@ -547,6 +593,7 @@ if __name__ == "__main__":
     
     # generate_n_random_grids(1, grid_attributes, True)
     grid = generate_random_grid(grid_attributes)
-    plot_grid_with_ids(grid)
-    grid_2 = swap_n_shelves(grid, 30)
-    plot_grid_with_ids(grid_2)
+    # plot_grid_with_ids(grid)
+    grid_2 = swap_n_shelves(grid, 50)
+    # plot_grid_with_ids(grid_2)
+    plot_grid_difference(grid, grid_2)
