@@ -16,6 +16,7 @@ class CellInfo():
     is_walkable: bool  # True si es un pasillo, False si es un estante
     aisle_id: int  # Puede ser None si no es un pasillo
     product_id_range: Tuple[int, int]
+    is_exit: bool
 
 class SupermarketGrid:
     def __init__(self, rows: int, cols: int) -> None:
@@ -23,7 +24,7 @@ class SupermarketGrid:
         self.cols: int = cols
         self.grid: List[List[CellInfo]] = [
                 [
-                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0)) 
+                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0), is_exit=False) 
                     for _ in range(cols)
                 ] for _ in range(rows)
             ]
@@ -64,25 +65,21 @@ class SupermarketGrid:
             for col in range(grid.cols):
                 aisle_id: int = layout_data["grid"][row][col]
                 
-                cell_info: CellInfo = CellInfo(is_walkable=(aisle_id <= 0), aisle_id=aisle_id, product_id_range=(0, 0))
-                
-                grid.grid[row][col] = cell_info
-                
+                grid.grid[row][col].is_walkable = (aisle_id == 0)  # True si es un pasillo o entrada/salida
+                grid.grid[row][col].aisle_id = aisle_id
+
                 # Procesar basado en el tipo de celda
                 if aisle_id > 0:  # Es un pasillo
                     # Mapear categoría a celdas
                     grid.aisle_info[aisle_id].cells.append((row, col))
-                    
-                elif aisle_id == -1:  # Es la entrada
-                    grid.entrance = (row, col)
-                elif aisle_id == -2:  # Es la salida
-                    grid.exit = (row, col)
         
         # Utilizar los datos de entrada/salida explícitos si están disponibles
         if "entrance" in layout_data:
             grid.entrance = tuple(layout_data["entrance"])
+
         if "exit" in layout_data:
             grid.exit = tuple(layout_data["exit"])
+            grid.grid[grid.exit[0]][grid.exit[1]].is_exit = True
         
         # Verificar conectividad
         # if not grid.is_connected():
