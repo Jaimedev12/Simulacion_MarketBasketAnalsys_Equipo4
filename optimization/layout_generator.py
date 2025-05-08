@@ -146,7 +146,23 @@ grid = [
         [
             0, 134, 134, 134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0
-        ]
+        ],
+    ]
+
+invalid_grid = [
+        [ 0, 0, 0, 0, 0],
+        [ 0, 1, 1, 1, 0],
+        [ 0, 2, 0, 2, 0],
+        [ 0, 3, 3, 3, 0],
+        [ 0, 0, 0, 0, 0]
+    ]
+
+invalid_grid_2 = [
+        [ 0, 0, 0, 0, 0],
+        [ 0, 1, 1, 1, 0],
+        [ 0, 1, 1, 1, 0],
+        [ 0, 1, 1, 1, 0],
+        [ 0, 0, 0, 0, 0]
     ]
 
 def display_layout(layout):
@@ -157,16 +173,70 @@ def display_layout(layout):
     for row in layout:
         for cell in row:
             if cell == 0:
-                print("{:>3}".format(" "), end=" ")
+                print("{:^3}".format(" "), end=" ")
             elif cell == -1:
-                print("{:>3}".format("X"), end=" ")
+                print("{:^3}".format("X"), end=" ")
             elif cell == -2:
-                print("{:>3}".format("C"), end=" ")
+                print("{:^3}".format("C"), end=" ")
             else:
-                print("{:>3}".format(cell), end=" ")
+                print("{:^3}".format(cell), end=" ")
         print()
 
+def validate_layout(layout):
+    """
+    Validar la distribución de la tienda.
+    :param layout: Lista de listas que representa la distribución de la tienda.
+    :return: True si la distribución es válida, False en caso contrario.
+    """
+    # Recorrer desde una casilla de pasillo para validar que se pueda llegar a
+    # todas las demás casillas de pasillo
+    rows = len(layout)
+    cols = len(layout[0]) if rows > 0 else 0
+    visited_aisle = [[False] * cols for _ in range(rows)]
+    visited_shelf = [[False] * cols for _ in range(rows)]
+    queue = []
+    # Encontrar la primera casilla de pasillo (0) para iniciar la búsqueda
+    for i in range(rows):
+        for j in range(cols):
+            if layout[i][j] == 0:
+                queue.append((i, j))
+                visited_aisle[i][j] = True
+                break
+        if queue:
+            break
+    if not queue:
+        return False
+    
+    # Realizar búsqueda en anchura (BFS) para marcar todas las casillas de
+    # pasillo alcanzables
+    while queue:
+        x, y = queue.pop(0)
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout[nx][ny] == 0:
+                visited_aisle[nx][ny] = True
+                queue.append((nx, ny))
+            elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelf[nx][ny] and layout[nx][ny] > 0:
+                visited_shelf[nx][ny] = True
+    
+    # Verificar que no haya celdas de pasillo no alcanzadas
+    for i in range(rows):
+        for j in range(cols):
+            if layout[i][j] == 0 and not visited_aisle[i][j]:
+                return False
+    
+    # Verificar que todas las casillas de pasillo sean alcanzables
+    for i in range(rows):
+        for j in range(cols):
+            if layout[i][j] > 0 and not visited_shelf[i][j]:
+                return False
+    
+    return True
 
 if __name__ == "__main__":
     # Ejemplo de uso
     display_layout(grid)
+    if validate_layout(grid):
+        print("La distribución es válida.")
+    else:
+        print("La distribución no es válida.")
