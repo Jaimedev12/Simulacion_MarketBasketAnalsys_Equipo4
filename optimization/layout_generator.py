@@ -258,41 +258,6 @@ def plot_grid_with_ids(grid):
 
     plt.show()
 
-def plot_grid_with_distinct_colors(grid):
-    """Visualiza el layout del supermercado con colores distintos para cada ID."""
-    rows = len(grid)
-    cols = len(grid[0]) if rows > 0 else 0
-    matrix = np.zeros((rows, cols))
-    
-    # Create a colormap for distinct colors
-    unique_ids = sorted(set(cell for row in grid for cell in row if cell > 0))
-    id_to_color = {id_: i + 3 for i, id_ in enumerate(unique_ids)}  # Start from 3 to avoid conflicts with -1, -2, 0
-
-    for x in range(rows):
-        for y in range(cols):
-            cell = grid[x][y]
-            if cell == 0:
-                matrix[x][y] = 0.0  # Pasillo
-            elif cell == -1:
-                matrix[x][y] = 1.0  # Salida
-            elif cell == -2:
-                matrix[x][y] = 2.0  # Entrada
-            elif cell > 0:
-                matrix[x][y] = id_to_color[cell]  # Assign unique color to shelf ID
-
-    cmap = plt.cm.get_cmap("tab20", len(unique_ids) + 3)  # Use tab20 for distinct colors
-    plt.imshow(matrix, cmap=cmap, interpolation="nearest")
-    plt.colorbar(ticks=range(len(unique_ids) + 3), label="Legend")
-    plt.title("Distribución de la Tienda (Colores Distintos)")
-
-    # Add legend for shelf IDs
-    for id_, color_index in id_to_color.items():
-        plt.scatter([], [], color=cmap(color_index / (len(unique_ids) + 3)), label=f"Shelf {id_}")
-    plt.legend(loc="upper right", bbox_to_anchor=(1.3, 1))
-
-    plt.show()
-
-
 def validate_layout(layout):
     """
     Validar la distribución de la tienda.
@@ -306,10 +271,10 @@ def validate_layout(layout):
     visited_aisle = [[False] * cols for _ in range(rows)]
     visited_shelves = [[False] * cols for _ in range(rows)]
     queue = []
-    # Encontrar la primera casilla de pasillo (0) para iniciar la búsqueda
+    # Encontrar la casilla de entrada (-2) o la primera casilla de pasillo (0)
     for i in range(rows):
         for j in range(cols):
-            if layout[i][j] == 0:
+            if layout[i][j] in [0, -2]:
                 queue.append((i, j))
                 visited_aisle[i][j] = True
                 break
@@ -324,7 +289,7 @@ def validate_layout(layout):
         x, y = queue.pop(0)
         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
             nx, ny = x + dx, y + dy
-            if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout[nx][ny] == 0:
+            if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout[nx][ny] in [0, -2, -1]:
                 visited_aisle[nx][ny] = True
                 queue.append((nx, ny))
             elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelves[nx][ny] and layout[nx][ny] > 0:
@@ -333,7 +298,7 @@ def validate_layout(layout):
     # Verificar que no haya celdas de pasillo no alcanzadas
     for i in range(rows):
         for j in range(cols):
-            if layout[i][j] == 0 and not visited_aisle[i][j]:
+            if layout[i][j] in [-2, -1, 0] and not visited_aisle[i][j]:
                 return False
     
     # Verificar que todas las casillas de pasillo sean alcanzables
@@ -438,7 +403,6 @@ def place_shelf_recursively(grid, available_positions, aisle_id, placed, length,
     # If valid, mark the position as occupied
     available_positions.remove((row, col))  # Remove the used position
     placed += 1
-    # print(f"Placing aisle {aisle_id} at ({row}, {col}). Remaining: {length - placed}")
 
     # Attempt to place adjacent shelves based on adjacency probability
     for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
@@ -458,16 +422,20 @@ def place_shelf_recursively(grid, available_positions, aisle_id, placed, length,
 
     return placed
 
-def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coords):
+def generate_random_grid(grid_attributes):
     """
     Generar una cuadrícula aleatoria con pasillos y estanterías. Las estanterías
     tienen que tener la longitud de casillas especificada por shelves_lengths.
     Sin embargo, las cuadrículas de una misma estantería podrían estar
     separadas, es decir, no necesariamente serán contiguas.
-    :param shelves_lengths: Diccionario con la longitud de cada pasillo.
-    :param dimensions: Dimensiones de la cuadrícula (x, y).
+    :param grid_attributes: Atributos de la cuadrícula (dimensiones, entrada, salida).
     :return: Cuadrícula generada aleatoriamente.
     """
+    shelves_lengths = grid_attributes["aisle_lengths"]
+    dimensions = grid_attributes["dimensions"]
+    entrance_coords = grid_attributes["entrance_coords"]
+    exit_coords = grid_attributes["exit_coords"]
+
     rows, cols = dimensions
     grid = [[0] * cols for _ in range(rows)]
     # Probabilidad de que cuando se coloque una estantería de un tipo, se
@@ -485,7 +453,6 @@ def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coor
     for aisle_id, length in shelves_lengths.items():
         if length > 0:
             placed = 0
-            # print(f"Placing aisle {aisle_id}. Total cells to place: {length}")
             placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
 
     # Colocar pasillos (0) en las celdas vacías
@@ -496,21 +463,41 @@ def generate_random_grid(shelves_lengths, dimensions, entrance_coords, exit_coor
     
     return grid
 
+def save_grid_to_json(grid, filename, grid_attributes):
+    """
+    Guardar la cuadrícula en un archivo JSON.
+    :param grid: Cuadrícula a guardar.
+    :param filename: Nombre del archivo JSON.
+    :param grid_attributes: Atributos de la cuadrícula (dimensiones, entrada, salida).
+    """
+    # Asegurarse que el directorio layouts existe
+    if not os.path.exists(cfg.LAYOUTS_DIR):
+        os.makedirs(cfg.LAYOUTS_DIR)
+        
+    with open(os.path.join(cfg.LAYOUTS_DIR, filename), 'w') as file:
+        json.dump({
+            "grid": grid,
+            "rows": grid_attributes["dimensions"][0],
+            "cols": grid_attributes["dimensions"][1],
+            "entrance": grid_attributes["entrance_coords"],
+            "exit": grid_attributes["exit_coords"],
+        }, file, indent=4)
+
+def generate_n_random_grids(n, grid_attributes, should_plot=False):
+    """
+    Generar n cuadrículas aleatorias y guardarlas en archivos JSON.
+    :param n: Número de cuadrículas a generar.
+    :param grid_attributes: Atributos de la cuadrícula (dimensiones, entrada, salida).
+    """
+    for i in range(n):
+        grid = generate_random_grid(grid_attributes)
+        filename = f"grid_{i}.json"
+        save_grid_to_json(grid, filename, grid_attributes)
+        print(f"Grid {i} saved to {filename}")
+        if should_plot:
+            plot_grid_with_ids(grid)
+
 if __name__ == "__main__":
-    # Ejemplo de uso
-    # display_layout(grid)
-
-
     grid_attributes = calculate_grid_dimensions()
-    print(grid_attributes)
-    grid = generate_random_grid(grid_attributes["aisle_lengths"], grid_attributes["dimensions"],
-                                 grid_attributes["entrance_coords"], grid_attributes["exit_coords"])
-    print("Grid generated")
-    display_layout(grid)
-    if validate_layout(grid):
-        print("La distribución es válida.")
-    else:
-        print("La distribución no es válida.")
-    # plot_grid(grid)
-    plot_grid_with_ids(grid)
-    # plot_grid_with_distinct_colors(grid)
+    
+    generate_n_random_grids(1, grid_attributes, True)
