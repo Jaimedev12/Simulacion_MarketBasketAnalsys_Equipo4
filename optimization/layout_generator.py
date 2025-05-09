@@ -90,7 +90,7 @@ def generate_individual_plot(grid, ax=None):
     if ax is None:
         fig, ax = plt.subplots()
     im = ax.imshow(matrix, cmap=cmap, interpolation="nearest")
-    ax.set_title("Distribución de la Tienda (con IDs)")
+    # ax.set_title("Distribución de la Tienda")
     ax.axis("off")
 
     # Overlay IDs on the grid
@@ -134,11 +134,11 @@ def plot_grid_difference(grid1, grid2):
 
     # Plot grid1 using plot_grid_with_ids
     generate_individual_plot(grid1, ax=axes[0])
-    axes[0].set_title("Grid 1 (Original)")
+    axes[0].set_title("Distribución original")
 
     # Plot grid2 using plot_grid_with_ids
     generate_individual_plot(grid2, ax=axes[1])
-    axes[1].set_title("Grid 2 (Modified)")
+    axes[1].set_title("Distribución modificada")
 
     # Plot the difference grid
     im = axes[2].imshow(difference_grid, cmap="coolwarm", interpolation="nearest")
@@ -148,6 +148,21 @@ def plot_grid_difference(grid1, grid2):
     # Add a colorbar for the difference grid
     cbar = fig.colorbar(im, ax=axes[2], orientation="vertical", fraction=0.046, pad=0.04)
     cbar.set_label("Diferencias")
+
+    plt.tight_layout()
+    plt.show()
+
+def plot_multiple_grids(grids, names):
+    """
+    Visualiza múltiples cuadrículas en una sola figura.
+    :param grids: Lista de cuadrículas a visualizar.
+    """
+    num_grids = len(grids)
+    fig, axes = plt.subplots(num_grids, 1, figsize=(5, num_grids * 5))
+
+    for i, grid in enumerate(grids):
+        generate_individual_plot(grid, ax=axes[i])
+        axes[i].set_title(names[i])
 
     plt.tight_layout()
     plt.show()
@@ -335,6 +350,7 @@ def generate_random_grid(grid_attributes):
     # Probabilidad de que cuando se coloque una estantería de un tipo, se
     # coloque otra estantería de ese mismo tipo al lado en vez de en una
     # posición aleatoria
+    print(cfg.ADJACENCY_PROBABILITY)
     adjacency_prob = cfg.ADJACENCY_PROBABILITY
 
     # Colocar la entrada y salida
@@ -463,9 +479,8 @@ def get_grid_object(aisle_info_filename: str) -> SupermarketGrid:
     return SupermarketGrid.from_dict(grid_input, aisle_info_filename)
 
 if __name__ == "__main__":
-    # grid_attributes = calculate_grid_dimensions()
-
     print(get_grid_object("../data/aisle_product_count.json"))
+
     
     # generate_n_random_grids(1, grid_attributes, True)
     # grid = generate_random_grid(grid_attributes)
@@ -473,3 +488,15 @@ if __name__ == "__main__":
     # grid_2 = swap_n_shelves(grid, 50)
     # plot_grid_with_ids(grid_2)
     # plot_grid_difference(grid, grid_2)
+
+    cfg.ADJACENCY_PROBABILITY = 1.0
+    grid_attributes = calculate_grid_dimensions()
+    grids = []
+    names = []
+    for i in range(2):
+        names.append(f"Probabilidad de adyacencia: {cfg.ADJACENCY_PROBABILITY}")
+        grid = generate_random_grid(grid_attributes)
+        grids.append(grid)
+        cfg.ADJACENCY_PROBABILITY -= 1
+    plot_multiple_grids(grids, names)
+    
