@@ -10,8 +10,8 @@ TABU_SIZE = 1
 
 # GRID CONFIGURATION
 GRID_DIMENSIONS_MULTIPLIER = 1
-GRID_DIMENSIONS_PADDING = 15
+GRID_DIMENSIONS_PADDING = 10
 MAX_AISLE_LENGTH = 10
 AISLE_PRODUCT_COUNT_FILE = f"{DATA_DIR}/aisle_product_count.json"
-ADJACENCY_PROBABILITY = 1.0  # Probability of adjacency between shelves of the same id
+ADJACENCY_PROBABILITY = 0.3  # Probability of adjacency between shelves of the same id
 LAYOUTS_DIR = "layouts"

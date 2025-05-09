@@ -11,173 +11,6 @@ import config as cfg
 from copy import deepcopy
 
 
-grid = [
-        [
-            0, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, -2, 0, 0, 0, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 1, 1, 1, 0, 0, 3, 3, 3, 0, 0, 5, 5, 5, 0, 0, 7, 7, 7, 0, 0, 9, 9,
-            9, 0, 0, 11, 11, 11, 0
-        ],
-        [
-            0, 2, 2, 2, 0, 0, 4, 4, 4, 0, 0, 6, 6, 6, 0, 0, 8, 8, 8, 0, 0, 10,
-            10, 10, 0, 0, 12, 12, 12, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 13, 13, 13, 0, 0, 15, 15, 15, 0, 0, 17, 17, 17, 0, 0, 19, 19, 19,
-            0, 0, 21, 21, 21, 0, 0, 23, 23, 23, 0
-        ],
-        [
-            0, 14, 14, 14, 0, 0, 16, 16, 16, 0, 0, 18, 18, 18, 0, 0, 20, 20, 20,
-            0, 0, 22, 22, 22, 0, 0, 24, 24, 24, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 25, 25, 25, 0, 0, 27, 27, 27, 0, 0, 29, 29, 29, 0, 0, 31, 31, 31,
-            0, 0, 33, 33, 33, 0, 0, 35, 35, 35, 0
-        ],
-        [
-            0, 26, 26, 26, 0, 0, 28, 28, 28, 0, 0, 30, 30, 30, 0, 0, 32, 32, 32,
-            0, 0, 34, 34, 34, 0, 0, 36, 36, 36, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 37, 37, 37, 0, 0, 39, 39, 39, 0, 0, 41, 41, 41, 0, 0, 43, 43, 43,
-            0, 0, 45, 45, 45, 0, 0, 47, 47, 47, 0
-        ],
-        [
-            0, 38, 38, 38, 0, 0, 40, 40, 40, 0, 0, 42, 42, 42, 0, 0, 44, 44, 44,
-            0, 0, 46, 46, 46, 0, 0, 48, 48, 48, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 49, 49, 49, 0, 0, 51, 51, 51, 0, 0, 53, 53, 53, 0, 0, 55, 55, 55,
-            0, 0, 57, 57, 57, 0, 0, 59, 59, 59, 0
-        ],
-        [
-            0, 50, 50, 50, 0, 0, 52, 52, 52, 0, 0, 54, 54, 54, 0, 0, 56, 56, 56,
-            0, 0, 58, 58, 58, 0, 0, 60, 60, 60, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 61, 61, 61, 0, 0, 63, 63, 63, 0, 0, 65, 65, 65, 0, 0, 67, 67, 67,
-            0, 0, 69, 69, 69, 0, 0, 71, 71, 71, 0
-        ],
-        [
-            0, 62, 62, 62, 0, 0, 64, 64, 64, 0, 0, 66, 66, 66, 0, 0, 68, 68, 68,
-            0, 0, 70, 70, 70, 0, 0, 72, 72, 72, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 73, 73, 73, 0, 0, 75, 75, 75, 0, 0, 77, 77, 77, 0, 0, 79, 79, 79,
-            0, 0, 81, 81, 81, 0, 0, 83, 83, 83, 0
-        ],
-        [
-            0, 74, 74, 74, 0, 0, 76, 76, 76, 0, 0, 78, 78, 78, 0, 0, 80, 80, 80,
-            0, 0, 82, 82, 82, 0, 0, 84, 84, 84, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 85, 85, 85, 0, 0, 87, 87, 87, 0, 0, 89, 89, 89, 0, 0, 91, 91, 91,
-            0, 0, 93, 93, 93, 0, 0, 95, 95, 95, 0
-        ],
-        [
-            0, 86, 86, 86, 0, 0, 88, 88, 88, 0, 0, 90, 90, 90, 0, 0, 92, 92, 92,
-            0, 0, 94, 94, 94, 0, 0, 96, 96, 96, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 97, 97, 97, 0, 0, 99, 99, 99, 0, 0, 102, 102, 102, 0, 0, 104,
-            104, 104, 0, 0, 106, 106, 106, 0, 0, 108, 108, 108, 0
-        ],
-        [
-            0, 98, 98, 98, 0, 0, 101, 101, 101, 0, 0, 103, 103, 103, 0, 0, 105,
-            105, 105, 0, 0, 107, 107, 107, 0, 0, 109, 109, 109, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 110, 110, 110, 0, 0, 112, 112, 112, 0, 0, 114, 114, 114, 0, 0,
-            116, 116, 116, 0, 0, 118, 118, 118, 0, 0, 120, 120, 120, 0
-        ],
-        [
-            0, 111, 111, 111, 0, 0, 113, 113, 113, 0, 0, 115, 115, 115, 0, 0,
-            117, 117, 117, 0, 0, 119, 119, 119, 0, 0, 121, 121, 121, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 122, 122, 122, 0, 0, 124, 124, 124, 0, 0, 126, 126, 126, 0, 0,
-            128, 128, 128, 0, 0, 130, 130, 130, 0, 0, 132, 132, 132, 0
-        ],
-        [
-            0, 123, 123, 123, 0, 0, 125, 125, 125, 0, 0, 127, 127, 127, 0, 0,
-            129, 129, 129, 0, 0, 131, 131, 131, 0, 0, 133, 133, 133, 0
-        ],
-        [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0
-        ],
-        [
-            0, 134, 134, 134, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0
-        ],
-    ]
-
-invalid_grid = [
-        [ 0, 0, 0, 0, 0],
-        [ 0, 1, 1, 1, 0],
-        [ 0, 2, 0, 2, 0],
-        [ 0, 3, 3, 3, 0],
-        [ 0, 0, 0, 0, 0]
-    ]
-
-invalid_grid_2 = [
-        [ 0, 0, 0, 0, 0],
-        [ 0, 1, 1, 1, 0],
-        [ 0, 1, 1, 1, 0],
-        [ 0, 1, 1, 1, 0],
-        [ 0, 0, 0, 0, 0]
-    ]
-
 def display_layout(layout):
     """
     Desplegar la distribución de la tienda en la consola.
@@ -388,7 +221,7 @@ def calculate_grid_dimensions():
     rows = padding + rows * multiplier
     cols = padding + cols * multiplier
 
-    print(f"Grid dimensions: {rows} x {cols}")
+    # print(f"Grid dimensions: {rows} x {cols}")
 
     # Place the entrance and exit both in the first row, one in the first
     # quarter and the other in the last quarter of the row 
@@ -581,11 +414,11 @@ def swap_n_shelves(grid, n, overwrite=False):
         if not validate_layout(new_grid):
             # If invalid, undo the swap
             new_grid[pos1[0]][pos1[1]], new_grid[pos2[0]][pos2[1]] = val1, val2
-            print(f"Intercambio inválido entre {pos1} y {pos2}. Revertido.")
+            # print(f"Intercambio inválido entre {pos1} y {pos2}. Revertido.")
         else:
             # If valid, count the swap
             swaps_done += 1
-            print(f"Intercambio válido entre {pos1} y {pos2}.")
+            # print(f"Intercambio válido entre {pos1} y {pos2}.")
 
     return new_grid
 
@@ -603,12 +436,36 @@ def generate_n_random_grids(n, grid_attributes, should_plot=False):
         if should_plot:
             plot_grid_with_ids(grid)
 
-if __name__ == "__main__":
+def get_grid_object():
+    """
+    Obtener la cuadrícula generada a partir de los atributos de la cuadrícula.
+    :return: Cuadrícula generada.
+    """
     grid_attributes = calculate_grid_dimensions()
+
+    grid = generate_random_grid(grid_attributes)
+
+    # Quitar la entrada y salida de la representacion
+    grid[grid_attributes["entrance_coords"][0]][grid_attributes["entrance_coords"][1]] = 0  # Entrance
+    grid[grid_attributes["exit_coords"][0]][grid_attributes["exit_coords"][1]] = 0  # Exit
+
+    grid_object = {
+        "grid": grid,
+        "rows": grid_attributes["dimensions"][0],
+        "cols": grid_attributes["dimensions"][1],
+        "entrance": grid_attributes["entrance_coords"],
+        "exit": grid_attributes["exit_coords"],
+    }
+    return grid_object
+
+if __name__ == "__main__":
+    # grid_attributes = calculate_grid_dimensions()
+
+    print(get_grid_object())
     
     # generate_n_random_grids(1, grid_attributes, True)
-    grid = generate_random_grid(grid_attributes)
+    # grid = generate_random_grid(grid_attributes)
     # plot_grid_with_ids(grid)
-    grid_2 = swap_n_shelves(grid, 50)
+    # grid_2 = swap_n_shelves(grid, 50)
     # plot_grid_with_ids(grid_2)
-    plot_grid_difference(grid, grid_2)
+    # plot_grid_difference(grid, grid_2)
