@@ -16,6 +16,15 @@ class CellInfo():
     is_walkable: bool  # True si es un pasillo, False si es un estante
     aisle_id: int  # Puede ser None si no es un pasillo
     product_id_range: Tuple[int, int]
+    is_exit: bool
+
+@dataclass
+class GridInput():
+    rows: int
+    cols: int
+    grid: List[List[int]]
+    entrance: Tuple[int, int]
+    exit: Tuple[int, int]
 
 class SupermarketGrid:
     def __init__(self, rows: int, cols: int) -> None:
@@ -23,70 +32,73 @@ class SupermarketGrid:
         self.cols: int = cols
         self.grid: List[List[CellInfo]] = [
                 [
-                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0)) 
+                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0), is_exit=False) 
                     for _ in range(cols)
                 ] for _ in range(rows)
             ]
         self.aisle_info: Dict[int, AisleInfo] = {}
         self.entrance: Tuple[int, int] = (0, 0)
         self.exit: Tuple[int, int] = (0, 0)
-        self.item_to_cells: Dict[int, List[Tuple[int, int]]] = {}  # Initialize here
+        self.graph: nx.Graph
 
     @classmethod
-    def from_file(cls, layout_filename: str, impulse_index_filename: str) -> 'SupermarketGrid':
+    def read_aisle_info(cls, aisle_info_filename: str) -> Dict[int, AisleInfo]:
         """
-        Carga el layout desde un archivo JSON y la información de impulso desde otro archivo JSON.
+        Carga la información de los pasillos desde un archivo JSON.
         
         Args:
-            layout_filename: Ruta al archivo con el layout del supermercado
-            impulse_index_filename: Ruta al archivo con los índices de impulso por pasillo
-        """
-        # Cargar el archivo de layout
-        with open(layout_filename, 'r') as f:
-            layout_data: Dict[str, Any] = json.load(f)
+            aisle_info_filename: Ruta al archivo con la información de los pasillos.
         
-        # Cargar el archivo de índices de impulso
-        with open(impulse_index_filename, 'r') as f:
-            impulse_data: Dict[str, Dict[str, Any]] = json.load(f)
+        Returns:
+            Dict[int, AisleInfo]: Un diccionario con la información de los pasillos.
+        """
+        with open(aisle_info_filename, 'r') as f:
+            aisle_info_from_file: Dict[str, Dict[str, Any]] = json.load(f)
+            aisle_info: Dict[int, AisleInfo] = {}
+
+            for aisle_id_str, info in aisle_info_from_file.items():
+                aisle_id = int(aisle_id_str)
+                aisle_info[int(aisle_id)] = AisleInfo(impulse_index=info['impulse_index'],
+                    name=info['aisle_name'], product_count=info['product_count'], cells=[])
+                
+            return aisle_info
+
+    @classmethod
+    def from_dict(cls, layout_data: GridInput, aisle_info_filename: str) -> 'SupermarketGrid':
+        """
+        Crea una instancia de SupermarketGrid a partir de un diccionario.
+        
+        Args:
+            grid_data: Un diccionario que contiene la información del grid.
+        
+        Returns:
+            SupermarketGrid: La instancia creada.
+        """
         
         # Crear la instancia del grid
-        grid: 'SupermarketGrid' = cls(layout_data["rows"], layout_data["cols"])
+        grid: 'SupermarketGrid' = cls(layout_data.rows, layout_data.cols)
         
         # Cargar información de pasillos desde el archivo de impulso
-        grid.aisle_info = {}
-        for aisle_id_str, info in impulse_data.items():
-            aisle_id = int(aisle_id_str)
-            grid.aisle_info[int(aisle_id)] = AisleInfo(impulse_index=info['impulse_index'],
-                name=info['aisle_name'], product_count=info['product_count'], cells=[])
+        aisle_info = cls.read_aisle_info(aisle_info_filename)
+        grid.aisle_info = aisle_info
         
         # Procesar el grid
         for row in range(grid.rows):
             for col in range(grid.cols):
-                aisle_id: int = layout_data["grid"][row][col]
+                aisle_id: int = layout_data.grid[row][col]
                 
-                cell_info: CellInfo = CellInfo(is_walkable=(aisle_id <= 0), aisle_id=aisle_id, product_id_range=(0, 0))
-                
-                grid.grid[row][col] = cell_info
-                
+                grid.grid[row][col].is_walkable = (aisle_id == 0)  # True si es un pasillo o entrada/salida
+                grid.grid[row][col].aisle_id = aisle_id
+
                 # Procesar basado en el tipo de celda
                 if aisle_id > 0:  # Es un pasillo
                     # Mapear categoría a celdas
                     grid.aisle_info[aisle_id].cells.append((row, col))
-                    
-                    # Actualizar item_to_cells para búsqueda rápida
-                    if aisle_id not in grid.item_to_cells:
-                        grid.item_to_cells[aisle_id] = []
-                    grid.item_to_cells[aisle_id].append((row, col))
-                elif aisle_id == -1:  # Es la entrada
-                    grid.entrance = (row, col)
-                elif aisle_id == -2:  # Es la salida
-                    grid.exit = (row, col)
         
         # Utilizar los datos de entrada/salida explícitos si están disponibles
-        if "entrance" in layout_data:
-            grid.entrance = tuple(layout_data["entrance"])
-        if "exit" in layout_data:
-            grid.exit = tuple(layout_data["exit"])
+        grid.entrance = layout_data.entrance
+        grid.exit = layout_data.exit
+        grid.grid[grid.exit[0]][grid.exit[1]].is_exit = True
         
         # Verificar conectividad
         # if not grid.is_connected():
@@ -107,32 +119,32 @@ class SupermarketGrid:
                 end = start + step_size if i < len(info.cells) - 1 else info.product_count+1
                 cell_info.product_id_range = (start, end)
     
+        cls._build_graph(grid)
+
         return grid
 
-    # @classmethod
-    # def from_dict(cls, data: Dict[str, Any]) -> 'SupermarketGrid':
-        """Creates a SupermarketGrid from a dictionary representation"""
-        grid = cls(data["rows"], data["cols"])
+    @classmethod
+    def from_file(cls, layout_filename: str, aisle_info_filename: str) -> 'SupermarketGrid':
+        """
+        Carga el layout desde un archivo JSON y la información de impulso desde otro archivo JSON.
         
-        for cell_data in data["cells"]:
-            x, y = cell_data["row"], cell_data["col"]
-            # Make a copy of the cell data without row/col keys
-            cell_copy = {k: v for k, v in cell_data.items() if k not in ["row", "col"]}
-            grid.grid[x][y] = cell_copy
-            
-            if cell_data["type"] == "shelf" and "category" in cell_data:
-                category = cell_data["category"]
-                if category not in grid.item_to_cells:
-                    grid.item_to_cells[category] = []
-                grid.item_to_cells[category].append((x, y))
-            
-            if cell_data["type"] == "entrance":
-                grid.entrance = (x, y)
-            if cell_data["type"] == "exit":
-                grid.exit = (x, y)
+        Args:
+            layout_filename: Ruta al archivo con el layout del supermercado
+            aisle_info_filename: Ruta al archivo con la info de los pasillos
+        """
+        # Cargar el archivo de layout
+        with open(layout_filename, 'r') as f:
+            layout_data: Dict[str, Any] = json.load(f)
         
-        print(grid.grid)
-        return grid
+        grid_info: GridInput = GridInput(
+            rows=layout_data['rows'],
+            cols=layout_data['cols'],
+            grid=layout_data['grid'],
+            entrance=tuple(layout_data['entrance']),
+            exit=tuple(layout_data['exit'])
+        )
+       
+        return cls.from_dict(grid_info, aisle_info_filename)
 
     def is_connected(self) -> bool:
         """Verifica que exista un camino entre entrada y salida"""
@@ -172,18 +184,8 @@ class SupermarketGrid:
                             if neighbor_cell.is_walkable:
                                 G.add_edge((x, y), (nx_pos, ny_pos))
         
+        self.graph = G  # Guardar el grafo en la instancia
         return G
-
-    def get_closest_cell(self, current_pos: Tuple[int, int], target_category: int) -> Optional[Tuple[int, int]]:
-        """Encuentra la celda más cercana de una categoría"""
-        if target_category not in self.item_to_cells:
-            return None
-        candidates = self.item_to_cells[target_category]
-        closest = min(
-            candidates,
-            key=lambda pos: abs(current_pos[0]-pos[0]) + abs(current_pos[1]-pos[1])
-        )
-        return closest
 
     def get_path(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
         """Calcula la ruta óptima con NetworkX"""

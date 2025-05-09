@@ -2,6 +2,7 @@ import json
 import math
 import random
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from matplotlib.colors import ListedColormap
 import numpy as np
 import os
@@ -9,6 +10,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config as cfg
 from copy import deepcopy
+from core.grid import GridInput, SupermarketGrid
 
 
 def display_layout(layout):
@@ -70,7 +72,8 @@ def generate_individual_plot(grid, ax=None):
     # Generate distinct colors for shelf IDs
     unique_ids = sorted(set(cell for row in grid for cell in row if cell > 0))
     for i, shelf_id in enumerate(unique_ids):
-        custom_colors[shelf_id] = plt.cm.tab20(i % 20)  # Use tab20 for shelf IDs
+        color_tuple = plt.get_cmap('tab20')(i % 20)  # Use tab20 for shelf IDs
+        custom_colors[shelf_id] = mcolors.to_hex(color_tuple)  # Convert to hex color
 
     # Create a colormap from the custom colors
     max_value = max(custom_colors.keys())
@@ -452,7 +455,7 @@ def generate_n_random_grids(n, grid_attributes, should_plot=False):
         if should_plot:
             plot_grid_with_ids(grid)
 
-def get_grid_object():
+def get_grid_object(aisle_info_filename: str) -> SupermarketGrid:
     """
     Obtener la cuadrícula generada a partir de los atributos de la cuadrícula.
     :return: Cuadrícula generada.
@@ -465,17 +468,19 @@ def get_grid_object():
     grid[grid_attributes["entrance_coords"][0]][grid_attributes["entrance_coords"][1]] = 0  # Entrance
     grid[grid_attributes["exit_coords"][0]][grid_attributes["exit_coords"][1]] = 0  # Exit
 
-    grid_object = {
-        "grid": grid,
-        "rows": grid_attributes["dimensions"][0],
-        "cols": grid_attributes["dimensions"][1],
-        "entrance": grid_attributes["entrance_coords"],
-        "exit": grid_attributes["exit_coords"],
-    }
-    return grid_object
+    grid_input: GridInput = GridInput(
+        rows=grid_attributes["dimensions"][0],
+        cols=grid_attributes["dimensions"][1],
+        grid=grid,
+        entrance=grid_attributes["entrance_coords"],
+        exit=grid_attributes["exit_coords"],
+    )
+
+    return SupermarketGrid.from_dict(grid_input, aisle_info_filename)
 
 if __name__ == "__main__":
-    # print(get_grid_object())
+    print(get_grid_object("../data/aisle_product_count.json"))
+
     
     # generate_n_random_grids(1, grid_attributes, True)
     # grid = generate_random_grid(grid_attributes)

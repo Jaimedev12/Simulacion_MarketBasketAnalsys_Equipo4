@@ -12,8 +12,6 @@ def main():
     input_path = "../data/" + cfg.AISLE_INFO_FILENAME + ".csv"
     output_path = "../data/" + cfg.AISLE_INFO_FILENAME + ".json"
 
-
-    
     # Read CSV data
     data = {}
     with open(input_path, 'r') as csvfile:
