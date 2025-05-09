@@ -34,7 +34,7 @@ def animate_path(grid: SupermarketGrid, path: List[Tuple[int, int]], speed: int 
     cmap = ListedColormap(['white', 'lightgray'])  # 0: white (walkable), 1: lightgray (aisle)
 
     fig, ax = plt.subplots(figsize=(max(2, grid.cols / 3), max(2, grid.rows / 5)))
-    ax.set_title("Supermarket Path Animation")
+    ax.set_title("Recorrido de un cliente por el supermercado")
 
     # Display the grid layout
     # origin='upper' means (0,0) is top-left, matching matrix indexing
@@ -44,18 +44,18 @@ def animate_path(grid: SupermarketGrid, path: List[Tuple[int, int]], speed: int 
     # Mark entrance and exit
     # Path coordinates are (row, col). For plotting, plot(col, row).
     if grid.entrance:
-        ax.plot(grid.entrance[1], grid.entrance[0], 'go', markersize=6, label='Entrance')
+        ax.plot(grid.entrance[1], grid.entrance[0], 'go', markersize=6, label='Entrada')
     if grid.exit:
-        ax.plot(grid.exit[1], grid.exit[0], 'ro', markersize=6, label='Exit')
+        ax.plot(grid.exit[1], grid.exit[0], 'ro', markersize=6, label='Salida')
 
     # Plot the full path faintly (optional)
     if len(path) > 0:
         path_cols = [p[1] for p in path]  # Column indices
         path_rows = [p[0] for p in path]  # Row indices
-        ax.plot(path_cols, path_rows, 'b-', alpha=0.3, linewidth=2, label='Full Path')
+        ax.plot(path_cols, path_rows, 'b-', alpha=0.3, linewidth=2, label='Recorrido')
 
     # Customer marker
-    customer_marker, = ax.plot([], [], 'o', color='dodgerblue', markersize=8, label='Customer')
+    customer_marker, = ax.plot([], [], 'o', color='dodgerblue', markersize=8, label='Cliente')
 
     # Configure plot appearance
     ax.set_xticks(np.arange(grid.cols))
