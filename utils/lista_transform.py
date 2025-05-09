@@ -5,8 +5,8 @@ import ast
 
 def transform_csv_to_json():
     # Ruta del archivo CSV de entrada y JSON de salida
-    csv_file_path = '../data/aisle_list_per_order.csv'
-    json_file_path = '../data/aisle_list_per_order.json'
+    csv_file_path = '../data/shopping_lists.csv'
+    json_file_path = '../data/shopping_lists.json'
 
     # Leer el archivo CSV y convertir a lista de diccionarios
     with open(csv_file_path, mode='r', encoding='utf-8') as csv_file:
