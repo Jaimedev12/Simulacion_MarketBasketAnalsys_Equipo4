@@ -59,6 +59,7 @@ class TabuSearchOptimizer:
         
         return self.best_solution, self.best_score
 
+    # Definir una función para generar una clave única para la solución
     def _solution_hash(self, solution):
         """Genera una clave única para la solución"""
         cells = sorted(solution["cells"], key=lambda x: (x["row"], x["col"]))
