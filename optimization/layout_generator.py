@@ -480,7 +480,6 @@ def get_grid_object(aisle_info_filename: str) -> SupermarketGrid:
 
 if __name__ == "__main__":
     print(get_grid_object("../data/aisle_product_count.json"))
-
     
     # generate_n_random_grids(1, grid_attributes, True)
     # grid = generate_random_grid(grid_attributes)
