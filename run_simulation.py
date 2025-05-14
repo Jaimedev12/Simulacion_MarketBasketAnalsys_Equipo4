@@ -11,6 +11,7 @@ from typing import List, Dict, Any, Tuple
 from utils.animate_path import animate_path
 import random
 from optimization.tabu_search import TabuSearchOptimizer
+from optimization.result_interpreter import ResultInterpreter
 
 def main():
     # Cargar datos
@@ -24,10 +25,13 @@ def main():
         customers.append(customer)
         
 
-    selected_customers = random.sample(customers, 1)
+    selected_customers = random.sample(customers, 3)
 
     search_optimizer = TabuSearchOptimizer(initial_grid, customers=selected_customers)
-    search_result = search_optimizer.optimize(iterations=100, tabu_size=10)
+    search_optimizer.optimize(iterations=20, tabu_size=10)
+
+    interpreter = ResultInterpreter(search_optimizer.iterations)
+    interpreter.store()
 
     # plot_multiple_grids([initial_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])
 
