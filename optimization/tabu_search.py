@@ -9,7 +9,7 @@ from .neighborhood import gen_neighbors
 from typing import List, Tuple
 import hashlib
 import os
-from optimization.layout_generator import generate_individual_plot
+from visualization.visualization import generate_individual_plot
 
 @dataclass
 class TabuSearchScore:
