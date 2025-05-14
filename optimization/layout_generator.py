@@ -2,19 +2,18 @@ from dataclasses import dataclass
 import json
 import math
 import random
-from tkinter import Grid
+from matplotlib.image import AxesImage
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from matplotlib.colors import ListedColormap
 import numpy as np
 import os
-import sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config as cfg
-from copy import deepcopy
-from core.grid import GridInput, SupermarketGrid, CellInfo
-from typing import List, Dict, Tuple, Set, Optional, Type
-from utils.helpers import read_aisle_info
+from core.grid import GridInput, SupermarketGrid, GridInput
+from typing import List, Dict, Tuple, Set, Optional
+from utils.helpers import read_aisle_info, validate_layout
+from optimization.neighborhood import swap_n_shelves
+
 
 @dataclass
 class GridAttributes:
@@ -65,7 +64,7 @@ def plot_grid(grid: SupermarketGrid):
     plt.title("Distribución de la Tienda")
     plt.show()
 
-def generate_individual_plot(grid: SupermarketGrid, ax=None):
+def generate_individual_plot(grid: SupermarketGrid, ax=None) -> AxesImage:
     """
     Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados.
     :param grid: La cuadrícula a visualizar.
@@ -103,7 +102,10 @@ def generate_individual_plot(grid: SupermarketGrid, ax=None):
     # Plot on the provided axis or create a new figure
     if ax is None:
         fig, ax = plt.subplots()
+        plt.close(fig)  # Close the figure to avoid displaying it immediately
+        
     im = ax.imshow(matrix, cmap=cmap, interpolation="nearest")
+
     # ax.set_title("Distribución de la Tienda")
     ax.axis("off")
 
@@ -112,7 +114,7 @@ def generate_individual_plot(grid: SupermarketGrid, ax=None):
         for y in range(cols):
             cell = grid.grid[x][y]
             if not cell.is_walkable:  # Only display IDs for non-pasillo cells
-                ax.text(y, x, str(cell.aisle_id), ha="center", va="center", color="black", fontsize=8)
+                ax.text(y, x, str(cell.aisle_id), ha="center", va="center", color="black", fontsize=5)
 
     return im
 
@@ -181,51 +183,51 @@ def plot_multiple_grids(grids: List[SupermarketGrid], names):
     plt.tight_layout()
     plt.show()
 
-def validate_layout(layout: SupermarketGrid):
-    # Recorrer desde una casilla de pasillo para validar que se pueda llegar a
-    # todas las demás casillas de pasillo
-    rows = layout.rows
-    cols = layout.cols
-    visited_aisle = [[False] * cols for _ in range(rows)]
-    visited_shelves = [[False] * cols for _ in range(rows)]
-    queue = []
+# def validate_layout(layout: SupermarketGrid):
+#     # Recorrer desde una casilla de pasillo para validar que se pueda llegar a
+#     # todas las demás casillas de pasillo
+#     rows = layout.rows
+#     cols = layout.cols
+#     visited_aisle = [[False] * cols for _ in range(rows)]
+#     visited_shelves = [[False] * cols for _ in range(rows)]
+#     queue = []
     
-    for i in range(rows):
-        for j in range(cols):
-            if layout.grid[i][j].is_walkable:
-                queue.append((i, j))
-                visited_aisle[i][j] = True
-                break
-        if queue:
-            break
-    if not queue:
-        return False
+#     for i in range(rows):
+#         for j in range(cols):
+#             if layout.grid[i][j].is_walkable:
+#                 queue.append((i, j))
+#                 visited_aisle[i][j] = True
+#                 break
+#         if queue:
+#             break
+#     if not queue:
+#         return False
     
-    # Realizar búsqueda en anchura (BFS) para marcar todas las casillas de
-    # pasillo alcanzables
-    while queue:
-        x, y = queue.pop(0)
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout.grid[nx][ny].is_walkable:
-                visited_aisle[nx][ny] = True
-                queue.append((nx, ny))
-            elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelves[nx][ny] and not layout.grid[nx][ny].is_walkable:
-                visited_shelves[nx][ny] = True
+#     # Realizar búsqueda en anchura (BFS) para marcar todas las casillas de
+#     # pasillo alcanzables
+#     while queue:
+#         x, y = queue.pop(0)
+#         for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+#             nx, ny = x + dx, y + dy
+#             if 0 <= nx < rows and 0 <= ny < cols and not visited_aisle[nx][ny] and layout.grid[nx][ny].is_walkable:
+#                 visited_aisle[nx][ny] = True
+#                 queue.append((nx, ny))
+#             elif 0 <= nx < rows and 0 <= ny < cols and not visited_shelves[nx][ny] and not layout.grid[nx][ny].is_walkable:
+#                 visited_shelves[nx][ny] = True
     
-    # Verificar que no haya celdas de pasillo no alcanzadas
-    for i in range(rows):
-        for j in range(cols):
-            if layout.grid[i][j].is_walkable and not visited_aisle[i][j]:
-                return False
+#     # Verificar que no haya celdas de pasillo no alcanzadas
+#     for i in range(rows):
+#         for j in range(cols):
+#             if layout.grid[i][j].is_walkable and not visited_aisle[i][j]:
+#                 return False
     
-    # Verificar que todas las casillas de pasillo sean alcanzables
-    for i in range(rows):
-        for j in range(cols):
-            if layout.grid[i][j].aisle_id > 0 and not visited_shelves[i][j]:
-                return False
+#     # Verificar que todas las casillas de pasillo sean alcanzables
+#     for i in range(rows):
+#         for j in range(cols):
+#             if layout.grid[i][j].aisle_id > 0 and not visited_shelves[i][j]:
+#                 return False
     
-    return True
+#     return True
 
 def calculate_grid_dimensions() -> GridAttributes:
     """
@@ -263,7 +265,6 @@ def calculate_grid_dimensions() -> GridAttributes:
         exit_coords=exit_coords
     )
 
-
 def calculate_aisle_length() -> Tuple[Dict[int, int], int]:
     """
     Calcular la longitud de los pasillos con base en la cantidad de productos
@@ -298,7 +299,7 @@ def calculate_aisle_length() -> Tuple[Dict[int, int], int]:
     return shelves_lengths, needed_cells
 
 def place_shelf_recursively(
-        grid: SupermarketGrid, 
+        grid: List[List[int]], 
         available_positions: Set[Tuple[int, int]], 
         aisle_id: int, 
         placed: int, 
@@ -327,11 +328,9 @@ def place_shelf_recursively(
         row, col = random.choice(list(available_positions))
 
     # Validate the position
-    grid.grid[row][col].aisle_id = int(aisle_id)
-    grid.grid[row][col].is_walkable = False  # Mark as not walkable
+    grid[row][col] = int(aisle_id)
     if not validate_layout(grid):
-        grid.grid[row][col].aisle_id = 0  # Reset the position if invalid
-        grid.grid[row][col].is_walkable = True  # Mark as walkable again
+        grid[row][col] = 0  # Reset the position if invalid
         if position:
             return placed  # Return without placing if a specific position was invalid
         else:
@@ -375,7 +374,9 @@ def generate_random_grid(grid_attributes: GridAttributes) -> SupermarketGrid:
     entrance_coords = grid_attributes.entrance_coords
     exit_coords = grid_attributes.exit_coords
 
-    grid: SupermarketGrid = SupermarketGrid(rows, cols)
+
+    
+    grid: List[List[int]] = [[0] * cols for _ in range(rows)]
     
     # Probabilidad de que cuando se coloque una estantería de un tipo, se
     # coloque otra estantería de ese mismo tipo al lado en vez de en una
@@ -392,9 +393,10 @@ def generate_random_grid(grid_attributes: GridAttributes) -> SupermarketGrid:
 
     for row in range(rows):
         for col in range(cols):
-            if not grid.grid[row][col].is_walkable:
+            pos = (row, col)
+            if not grid[row][col] == 0:
                 continue
-            if grid.grid[row][col].is_entrance or grid.grid[row][col].is_exit:
+            if pos == entrance_coords or pos == exit_coords:
                 continue
                 
             available_positions.add((row, col))
@@ -404,8 +406,15 @@ def generate_random_grid(grid_attributes: GridAttributes) -> SupermarketGrid:
             placed = 0
             placed = place_shelf_recursively(grid, available_positions, aisle_id, placed, length, adjacency_prob)
 
-    
-    return grid
+    grid_input = GridInput(
+        rows=rows,
+        cols=cols,
+        grid=grid,
+        entrance=entrance_coords,
+        exit=exit_coords,
+    )
+
+    return SupermarketGrid.from_dict(grid_input)
 
 def save_grid_to_json(grid: SupermarketGrid, filename: str, grid_attributes: GridAttributes):
     """
@@ -427,76 +436,6 @@ def save_grid_to_json(grid: SupermarketGrid, filename: str, grid_attributes: Gri
             "exit": grid_attributes.exit_coords,
         }, file, indent=4)
 
-def swap_cells(grid: SupermarketGrid, pos1: Tuple[int, int], pos2: Tuple[int, int]):
-    """
-    Intercambiar dos estanterías en la cuadrícula.
-    :param grid: Cuadrícula a modificar.
-    :param pos1: Posición de la primera estantería (fila, columna).
-    :param pos2: Posición de la segunda estantería (fila, columna).
-    """
-    cell_info_1 = grid.grid[pos1[0]][pos1[1]]
-    cell_info_2 = grid.grid[pos2[0]][pos2[1]]
-
-    grid.grid[pos1[0]][pos1[1]] = cell_info_2
-    grid.grid[pos2[0]][pos2[1]] = cell_info_1
-
-def swap_n_shelves(grid: SupermarketGrid, n: int, overwrite: bool=False):
-    """
-    Intercambiar n pares de celdas en la cuadrícula. El intercambio puede ser entre:
-    - Dos estanterías.
-    - Una estantería y un pasillo.
-    No se permite intercambiar la entrada, la salida, ni dos pasillos.
-    Si un intercambio no es válido, no se cuenta como uno de los n intercambios.
-    :param grid: Cuadrícula a modificar.
-    :param n: Número de intercambios a realizar.
-    """
-    if overwrite:
-        new_grid = grid
-    else:
-        new_grid = deepcopy(grid)
-
-    rows = new_grid.rows
-    cols = new_grid.cols
-
-    # Get all valid positions (exclude entrance and exit)
-    valid_positions: List[Tuple[int, int]] = []
-    for i in range(rows):
-        for j in range(cols):
-            if new_grid.grid[i][j].is_entrance or new_grid.grid[i][j].is_exit:
-                continue
-            valid_positions.append((i, j))
-
-    swaps_done = 0
-    while swaps_done < n:
-        # Randomly select two distinct positions
-        pos1, pos2 = random.sample(valid_positions, 2)
-
-        # Get the values at the selected positions
-        cell1, cell2 = new_grid.grid[pos1[0]][pos1[1]], new_grid.grid[pos2[0]][pos2[1]]
-
-        # Cannot swap entrance or exit cells
-        if cell1.is_entrance or cell1.is_exit or cell2.is_entrance or cell2.is_exit:
-            continue
-
-        # Ensure the swap is meaningful (not between two aisles)
-        if cell1.is_walkable and cell2.is_walkable:
-            continue  # Skip this swap as it's pointless
-
-        # Perform the swap
-        swap_cells(new_grid, pos1, pos2)
-
-        # Validate the grid after the swap
-        if not validate_layout(new_grid):
-            # If invalid, undo the swap
-            swap_cells(new_grid, pos1, pos2)
-            # print(f"Intercambio inválido entre {pos1} y {pos2}. Revertido.")
-        else:
-            # If valid, count the swap
-            swaps_done += 1
-            # print(f"Intercambio válido entre {pos1} y {pos2}.")
-
-    return new_grid
-
 def generate_n_random_grids(n: int, grid_attributes: GridAttributes, should_plot: bool=False):
     """
     Generar n cuadrículas aleatorias y guardarlas en archivos JSON.
@@ -511,7 +450,7 @@ def generate_n_random_grids(n: int, grid_attributes: GridAttributes, should_plot
         if should_plot:
             plot_grid_with_ids(grid)
 
-def get_grid_object(aisle_info_filename: str) -> SupermarketGrid:
+def get_grid_object() -> SupermarketGrid:
     """
     Obtener la cuadrícula generada a partir de los atributos de la cuadrícula.
     :return: Cuadrícula generada.
@@ -523,7 +462,6 @@ def get_grid_object(aisle_info_filename: str) -> SupermarketGrid:
     return grid
 
 if __name__ == "__main__":
-    print(get_grid_object("../data/aisle_product_count.json"))
     
     # generate_n_random_grids(1, grid_attributes, True)
     # grid = generate_random_grid(grid_attributes)

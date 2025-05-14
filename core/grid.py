@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import json
 import networkx as nx
 from typing import List, Dict, Tuple, Optional, Any, TypedDict
+import config as cfg
 
 # Define the structure of each aisle info entry
 @dataclass
@@ -65,7 +66,7 @@ class SupermarketGrid:
             return aisle_info
 
     @classmethod
-    def from_dict(cls, layout_data: GridInput, aisle_info_filename: str) -> 'SupermarketGrid':
+    def from_dict(cls, layout_data: GridInput, aisle_info_file: str = cfg.AISLE_INFO_FILE) -> 'SupermarketGrid':
         """
         Crea una instancia de SupermarketGrid a partir de un diccionario.
         
@@ -80,7 +81,7 @@ class SupermarketGrid:
         grid: 'SupermarketGrid' = cls(layout_data.rows, layout_data.cols)
         
         # Cargar información de pasillos desde el archivo de impulso
-        aisle_info = cls.read_aisle_info(aisle_info_filename)
+        aisle_info = cls.read_aisle_info(aisle_info_file)
         grid.aisle_info = aisle_info
         
         # Procesar el grid
@@ -152,8 +153,7 @@ class SupermarketGrid:
         """Verifica que exista un camino entre entrada y salida"""
         if not self.entrance or not self.exit:
             return False
-        G = self._build_graph()
-        return nx.has_path(G, self.entrance, self.exit)
+        return nx.has_path(self.graph, self.entrance, self.exit)
 
     def _build_graph(self) -> nx.Graph:
         """
@@ -191,7 +191,11 @@ class SupermarketGrid:
 
     def get_path(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
         """Calcula la ruta óptima con NetworkX"""
-        G = self._build_graph()
+        G = self.graph
+
+        if start not in G or end not in G:
+            return None
+
         try:
             return list(nx.shortest_path(G, start, end))
         except nx.NetworkXNoPath:
