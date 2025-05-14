@@ -16,7 +16,8 @@ class CellInfo():
     is_walkable: bool  # True si es un pasillo, False si es un estante
     aisle_id: int  # Puede ser None si no es un pasillo
     product_id_range: Tuple[int, int]
-    is_exit: bool
+    is_exit: bool = False
+    is_entrance: bool = False
 
 @dataclass
 class GridInput():
@@ -32,7 +33,7 @@ class SupermarketGrid:
         self.cols: int = cols
         self.grid: List[List[CellInfo]] = [
                 [
-                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0), is_exit=False) 
+                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0)) 
                     for _ in range(cols)
                 ] for _ in range(rows)
             ]
@@ -99,6 +100,7 @@ class SupermarketGrid:
         grid.entrance = layout_data.entrance
         grid.exit = layout_data.exit
         grid.grid[grid.exit[0]][grid.exit[1]].is_exit = True
+        grid.grid[grid.entrance[0]][grid.entrance[1]].is_entrance = True
         
         # Verificar conectividad
         # if not grid.is_connected():
