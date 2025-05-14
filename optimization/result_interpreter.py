@@ -1,12 +1,29 @@
+from dataclasses import dataclass
 from optimization.tabu_search import Iteration
-from typing import List
+from typing import List, Tuple
 import numpy as np
+import os
+import shutil
+
+# @dataclass
+# class ResultDataset:
+
 
 class ResultInterpreter:
     def __init__(self, iterations: List[Iteration]):
         self.iterations = iterations
 
-    def store(self):
+    def store(self, directory: str = "optimization/results"):
+        # Define the results directory
+        
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+            os.makedirs(directory)    
+        else:
+            # Create directory if it doesn't exist
+            os.makedirs(directory)
+
+
         numeric_grids: List[List[List[int]]] = []
         for it in self.iterations:
             grid = it.grid.grid
@@ -36,5 +53,12 @@ class ResultInterpreter:
 
         it_seq = np.array([it.iteration_num for it in self.iterations], dtype=np.int32)
 
+        np.savez(directory+"/results.npz", grids=grid_array, scores=scores, it_seq=it_seq)
 
-        np.savez("/optimization/results/results.npz", grids=grid_array, scores=scores, it_seq=it_seq)
+    def read_results(self, directory: str = "optimization/results") -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        # Load the results from the .npz file
+        data = np.load(directory+"/results.npz")
+        grids = data['grids']
+        scores = data['scores']
+        it_seq = data['it_seq']
+        return grids, scores, it_seq

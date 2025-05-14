@@ -24,14 +24,20 @@ def main():
         customer = CustomerSimulator(shopping_list)
         customers.append(customer)
         
-
     selected_customers = random.sample(customers, 3)
 
     search_optimizer = TabuSearchOptimizer(initial_grid, customers=selected_customers)
-    search_optimizer.optimize(iterations=20, tabu_size=10)
+    search_optimizer.optimize(iterations=3, tabu_size=10)
 
     interpreter = ResultInterpreter(search_optimizer.iterations)
     interpreter.store()
+    search_result = interpreter.read_results()
+
+    for i, grid in enumerate(search_result[0]):
+        print(f"Grid {i}:")
+        for row in grid:
+            print(row)
+        print()
 
     # plot_multiple_grids([initial_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])
 
