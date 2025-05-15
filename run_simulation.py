@@ -38,7 +38,8 @@ def main():
     search_result = interpreter.read_results()
     for it in search_result:
         print(it.iteration_num)
-        print(it.heat_map)
+        print(it.walk_heat_map)
+        print(it.impulse_heat_map)
         print()
 
     # plot_multiple_grids([ordered_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])

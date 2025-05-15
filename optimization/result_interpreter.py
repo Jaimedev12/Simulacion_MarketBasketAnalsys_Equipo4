@@ -6,9 +6,6 @@ import numpy as np
 import os
 import shutil
 
-# @dataclass
-# class ResultDataset:
-
 
 class ResultInterpreter:
     def __init__(self, iterations: List[Iteration]):
@@ -53,9 +50,17 @@ class ResultInterpreter:
         )
 
         it_seq = np.array([it.iteration_num for it in self.iterations], dtype=np.int32)
-        heat_map_array = np.array([it.heat_map for it in self.iterations], dtype=np.float64)
+        walk_heat_map_array = np.array([it.walk_heat_map for it in self.iterations], dtype=np.float64)
+        impulse_heat_map_array = np.array([it.impulse_heat_map for it in self.iterations], dtype=np.float64)
 
-        np.savez(directory+"/results.npz", grids=grid_array, scores=scores, it_seq=it_seq, heat_maps=heat_map_array)
+        np.savez(
+            directory+"/results.npz", 
+            grids=grid_array, 
+            scores=scores, 
+            it_seq=it_seq, 
+            walk_heat_maps=walk_heat_map_array, 
+            impulse_heat_maps=impulse_heat_map_array
+            )
 
     def _get_grid_object(self, numeric_grid: List[List[int]]) -> SupermarketGrid:
         # Convert the numeric grid back to a SupermarketGrid object
@@ -94,7 +99,8 @@ class ResultInterpreter:
         grids = data['grids']
         scores = data['scores']
         it_seq = data['it_seq']
-        heat_maps = data['heat_maps']
+        walk_heat_maps = data['walk_heat_maps']
+        impulse_heat_maps = data['impulse_heat_maps']
         iterations: List[Iteration] = []
 
         for i in range(len(grids)):
@@ -106,7 +112,13 @@ class ResultInterpreter:
             )
             grid = self._get_grid_object(grids[i])
 
-            iteration = Iteration(iteration_num=it_num, grid=grid, score=score, heat_map=heat_maps[i])
+            iteration = Iteration(
+                iteration_num=it_num, 
+                grid=grid, 
+                score=score, 
+                walk_heat_map=walk_heat_maps[i],
+                impulse_heat_map=impulse_heat_maps[i]
+                )
             iterations.append(iteration)
 
         return iterations
