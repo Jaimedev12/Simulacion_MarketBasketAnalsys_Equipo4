@@ -32,7 +32,8 @@ class TabuSearchOptimizer:
         self.best_solution: SupermarketGrid = deepcopy(self.current_solution)
         self.best_score: TabuSearchScore = self.evaluate_solution(self.current_solution)
         self.current_score: TabuSearchScore = self.best_score
-        self.iterations: List[Iteration] = [Iteration(initial_grid, self.best_score, 0)]
+        self.iterations: List[Iteration] = []
+        self.log_iteration(0)
         
     def change_curr_grid(self, new_grid: SupermarketGrid, restart_score: bool = False):
         """Cambia la cuadrícula inicial"""
@@ -44,6 +45,8 @@ class TabuSearchOptimizer:
 
         if restart_score:
             self.best_score = self.current_score
+
+        self.log_iteration(0)
 
     def evaluate_solution(self, solution: SupermarketGrid) -> TabuSearchScore:
         """Evalúa una solución con simulaciones de clientes"""
@@ -67,7 +70,7 @@ class TabuSearchOptimizer:
             )
 
     def log_iteration(self, iteration: int):
-        print(f"Iteration {iteration+1}: Best score: {self.best_score.total_score}")
+        print(f"Iteration {iteration}: Best score: {self.best_score.total_score}")
         print(f"Current score ->", end=" ")
         print(f"Total: {round(self.current_score.total_score, 2)} ", end=" ")
         print(f"Purchases: {round(self.current_score.adjusted_purchases, 2)}", end=" ")
@@ -77,12 +80,14 @@ class TabuSearchOptimizer:
         )
 
     def log_best_solution(self):
-        print()
+        print("-----------------------------")
         print(f"Best solution: {self.best_solution}")
         print(f"Best score ->", end=" ")
         print(f"Total: {round(self.best_score.total_score, 2)} ", end=" ")
         print(f"Purchases: {round(self.best_score.adjusted_purchases, 2)}", end=" ")
         print(f"Steps: {round(self.best_score.adjusted_steps, 2)}")
+        print("-----------------------------")
+        print()
         self.iterations.append(
             Iteration(self.best_solution, self.best_score, -1)
         )
@@ -129,7 +134,8 @@ class TabuSearchOptimizer:
         for cur_iter in range(iterations):
 
             best_neighbor, best_score, is_worth_continuing = self._get_best_neighbor(
-                tries_allowed=tries_allowed
+                tries_allowed=tries_allowed,
+                swap_walkable_cells=swap_walkable_cells
                 )
 
             if not is_worth_continuing:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from optimization.tabu_search import Iteration
+from optimization.tabu_search import Iteration, TabuSearchScore
+from core.grid import SupermarketGrid, GridInput, CellInfo
 from typing import List, Tuple
 import numpy as np
 import os
@@ -55,10 +56,54 @@ class ResultInterpreter:
 
         np.savez(directory+"/results.npz", grids=grid_array, scores=scores, it_seq=it_seq)
 
-    def read_results(self, directory: str = "optimization/results") -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    def _get_grid_object(self, numeric_grid: List[List[int]]) -> SupermarketGrid:
+        # Convert the numeric grid back to a SupermarketGrid object
+        rows = len(numeric_grid)
+        cols = len(numeric_grid[0]) if rows > 0 else 0
+        grid_cells: List[List[CellInfo]] = [[CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0)) for _ in range(cols)] for _ in range(rows)]
+        entrance_coords: Tuple[int, int] = (0, 0)
+        exit_coords: Tuple[int, int] = (0, 0)
+
+        for x in range(rows):
+            for y in range(cols):
+                value = numeric_grid[x][y]
+                if value == -1:
+                    grid_cells[x][y].is_entrance = True
+                    entrance_coords = (x, y)
+                elif value == -2:
+                    grid_cells[x][y].is_exit = True
+                    exit_coords = (x, y)
+                else:
+                    grid_cells[x][y].aisle_id = value
+        
+        grid_input = GridInput(
+            rows=rows,
+            cols=cols,
+            grid=numeric_grid,
+            entrance=entrance_coords,
+            exit=exit_coords
+        )
+        new_grid = SupermarketGrid.from_dict(grid_input)
+
+        return new_grid
+
+    def read_results(self, directory: str = "optimization/results") -> List[Iteration]:
         # Load the results from the .npz file
         data = np.load(directory+"/results.npz")
         grids = data['grids']
         scores = data['scores']
         it_seq = data['it_seq']
-        return grids, scores, it_seq
+        iterations: List[Iteration] = []
+
+        for i in range(len(grids)):
+            it_num: int = it_seq[i]
+            score = TabuSearchScore(
+                total_score=scores[i][0],
+                adjusted_purchases=scores[i][1],
+                adjusted_steps=scores[i][2]
+            )
+            grid = self._get_grid_object(grids[i])
+            iteration = Iteration(iteration_num=it_num, grid=grid, score=score)
+            iterations.append(iteration)
+
+        return iterations

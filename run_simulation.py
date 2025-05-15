@@ -34,13 +34,10 @@ def main():
 
     interpreter = ResultInterpreter(search_optimizer.iterations)
     interpreter.store()
-    search_result = interpreter.read_results()
-
-    for i, grid in enumerate(search_result[0]):
-        print(f"Grid {i}:")
-        for row in grid:
-            print(row)
-        print()
+    
+    # search_result = interpreter.read_results()
+    # for it in search_result:
+    #     print(it.iteration_num)
 
     # plot_multiple_grids([ordered_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])
 
