@@ -6,7 +6,7 @@ from matplotlib.image import AxesImage
 from core.grid import SupermarketGrid, CellInfo
 from core.customer import CustomerSimulator
 from .neighborhood import gen_neighbors
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import hashlib
 import os
 from visualization.visualization import generate_individual_plot
@@ -17,42 +17,69 @@ class TabuSearchScore:
     adjusted_purchases: float
     adjusted_steps: float
 
+HeatMap = List[List[float]]
+
 @dataclass
 class Iteration:
     grid: SupermarketGrid
     score: TabuSearchScore
     iteration_num: int
+    heat_map: HeatMap
 
 
 class TabuSearchOptimizer:
     def __init__(self, initial_grid: SupermarketGrid, customers: List[CustomerSimulator]):
-        self.current_solution: SupermarketGrid= initial_grid
         self.tabu_list = []
         self.customers: List[CustomerSimulator] = customers
+        
+        self.current_solution: SupermarketGrid= initial_grid
+        curr_eval = self.evaluate_solution(self.current_solution)
+        self.current_score: TabuSearchScore = curr_eval[0]
+        self.current_heat_map: HeatMap = curr_eval[1]
+
         self.best_solution: SupermarketGrid = deepcopy(self.current_solution)
-        self.best_score: TabuSearchScore = self.evaluate_solution(self.current_solution)
-        self.current_score: TabuSearchScore = self.best_score
+        self.best_score: TabuSearchScore = self.current_score
+        self.best_heat_map: HeatMap = self.current_heat_map
+
         self.iterations: List[Iteration] = []
         self.log_iteration(0)
         
     def change_curr_grid(self, new_grid: SupermarketGrid, restart_score: bool = False):
-        """Cambia la cuadrícula inicial"""
-        self.current_solution = new_grid
-        self.best_solution = deepcopy(self.current_solution)
-        
-        self.current_score = self.evaluate_solution(self.current_solution)
+        """Cambia la cuadrícula actual"""
         self.tabu_list = []
 
+        self.current_solution = new_grid
+
+        curr_eval = self.evaluate_solution(self.current_solution)
+        self.current_score = curr_eval[0]
+        self.current_heat_map: HeatMap = curr_eval[1]
+        
+        if self.current_score.total_score > self.best_score.total_score:
+            restart_score = True
+        
         if restart_score:
             self.best_score = self.current_score
+            self.best_solution = deepcopy(self.current_solution)
+            self.best_heat_map = self.current_heat_map
 
         self.log_iteration(0)
 
-    def evaluate_solution(self, solution: SupermarketGrid) -> TabuSearchScore:
+    def _normalize_heat_map(self, heat_map: HeatMap) -> HeatMap:
+        """Normaliza el mapa de calor"""
+        max_value = max(max(row) for row in heat_map)
+        min_value = min(min(row) for row in heat_map)
+        normalized_heat_map = [
+            [(cell - min_value) / (max_value - min_value) for cell in row]
+            for row in heat_map
+        ]
+        return normalized_heat_map
+
+    def evaluate_solution(self, solution: SupermarketGrid) -> Tuple[TabuSearchScore, HeatMap]:
         """Evalúa una solución con simulaciones de clientes"""
         total_score: float = 0.0
         adjusted_purchases_sum: float = 0.0
         adjusted_steps_sum: float = 0.0
+        heat_map: HeatMap = [[0.0 for _ in range(solution.cols)] for _ in range(solution.rows)]
         for customer in self.customers:
             result = customer.simulate(solution)
             num_products = len(customer.shopping_list)
@@ -63,20 +90,28 @@ class TabuSearchOptimizer:
             adjusted_purchases_sum += adjusted_purchases
             adjusted_steps_sum += adjusted_steps
 
-        return TabuSearchScore(
+            for pos in result.path:
+                heat_map[pos[0]][pos[1]] += 1.0
+            
+            for shelf_pos in result.impulsive_shelfs:
+                heat_map[shelf_pos[0]][shelf_pos[1]] += 1.0
+
+        normalized_heat_map = self._normalize_heat_map(heat_map)
+
+        return (TabuSearchScore(
             total_score/len(self.customers), 
             adjusted_purchases_sum/len(self.customers), 
             adjusted_steps=adjusted_steps_sum/len(self.customers)
-            )
+            ), normalized_heat_map)
 
-    def log_iteration(self, iteration: int):
-        print(f"Iteration {iteration}: Best score: {self.best_score.total_score}")
+    def log_iteration(self, save_it_as: int):
+        print(f"Iteration {save_it_as}: Best score: {self.best_score.total_score}")
         print(f"Current score ->", end=" ")
         print(f"Total: {round(self.current_score.total_score, 2)} ", end=" ")
         print(f"Purchases: {round(self.current_score.adjusted_purchases, 2)}", end=" ")
         print(f"Steps: {round(self.current_score.adjusted_steps, 2)}")
         self.iterations.append(
-            Iteration(self.current_solution, self.current_score, iteration)
+            Iteration(self.current_solution, self.current_score, save_it_as, self.current_heat_map)
         )
 
     def log_best_solution(self):
@@ -89,10 +124,10 @@ class TabuSearchOptimizer:
         print("-----------------------------")
         print()
         self.iterations.append(
-            Iteration(self.best_solution, self.best_score, -1)
+            Iteration(self.best_solution, self.best_score, -1, heat_map=self.best_heat_map)
         )
 
-    def _get_best_neighbor(self, tries_allowed: int = 5, swap_walkable_cells: bool = False) -> Tuple[SupermarketGrid, TabuSearchScore, bool]:
+    def _get_best_neighbor(self, tries_allowed: int = 5, swap_walkable_cells: bool = False) -> Tuple[SupermarketGrid, TabuSearchScore, HeatMap, bool]:
         while tries_allowed > 0:
             tries_allowed -= 1
             neighbors = gen_neighbors(
@@ -109,19 +144,20 @@ class TabuSearchOptimizer:
             ]
 
             best_neighbor = valid_neighbors[0]
-            best_score = self.evaluate_solution(valid_neighbors[0])
+            best_score, best_heat_map = self.evaluate_solution(valid_neighbors[0])
             for neighbor in valid_neighbors[1:]:
-                score = self.evaluate_solution(neighbor)
+                score, heat_map = self.evaluate_solution(neighbor)
                 if score.total_score > best_score.total_score:
                     best_neighbor = neighbor
                     best_score = score
+                    best_heat_map = heat_map
 
-            worst_allowed = self.current_score.total_score - abs(self.current_score.total_score)
+            worst_allowed = self.current_score.total_score - abs(self.current_score.total_score*0.05)
 
             if best_score.total_score > worst_allowed:
-                return best_neighbor, best_score, True
+                return best_neighbor, best_score, best_heat_map, True
 
-        return self.current_solution, TabuSearchScore(0.0, 0.0, 0.0), False
+        return self.current_solution, TabuSearchScore(0.0, 0.0, 0.0), self.current_heat_map, False
 
 
     def optimize(
@@ -133,7 +169,7 @@ class TabuSearchOptimizer:
             ) -> Tuple[SupermarketGrid, TabuSearchScore]:
         for cur_iter in range(iterations):
 
-            best_neighbor, best_score, is_worth_continuing = self._get_best_neighbor(
+            best_neighbor, best_score, best_heat_map, is_worth_continuing = self._get_best_neighbor(
                 tries_allowed=tries_allowed,
                 swap_walkable_cells=swap_walkable_cells
                 )
@@ -149,9 +185,11 @@ class TabuSearchOptimizer:
             
             self.current_solution = best_neighbor
             self.current_score = best_score
+            self.current_heat_map = best_heat_map
             if best_score.total_score > self.best_score.total_score:
                 self.best_solution = best_neighbor
                 self.best_score = best_score
+                self.best_heat_map = best_heat_map
             self.log_iteration((cur_iter+1))
         
         self.log_best_solution()
