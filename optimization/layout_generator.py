@@ -23,9 +23,10 @@ class GridAttributes:
     cols: int
     entrance_coords: Tuple[int, int]
     exit_coords: Tuple[int, int]
+    adjacency_probability: float = 1.0
 
 
-def calculate_grid_dimensions() -> GridAttributes:
+def calculate_grid_dimensions(adjacency_probability: float = 1) -> GridAttributes:
     """
     Calcular las dimensiones de la cuadrícula con base en la cantidad de
     productos que tiene cada uno. Se utilizará la cantidad de celdas de
@@ -58,10 +59,11 @@ def calculate_grid_dimensions() -> GridAttributes:
         rows=rows,
         cols=cols,
         entrance_coords=entrance_coords,
-        exit_coords=exit_coords
+        exit_coords=exit_coords,
+        adjacency_probability=adjacency_probability
     )
 
-def calculate_aisle_length() -> Tuple[Dict[int, int], int]:
+def calculate_aisle_length(max_aisle_length: int = 10) -> Tuple[Dict[int, int], int]:
     """
     Calcular la longitud de los pasillos con base en la cantidad de productos
     que tiene cada uno. Se utilizará la longitud máxima de pasillo en la
@@ -69,8 +71,6 @@ def calculate_aisle_length() -> Tuple[Dict[int, int], int]:
     :return: Diccionario con la longitud de cada pasillo y la cantidad de
     celdas necesarias.
     """
-    # Obtenemos la longitud máxima de pasillo de la configuración
-    max_aisle_length = cfg.MAX_AISLE_LENGTH
 
     aisle_info = read_aisle_info()
 
@@ -169,17 +169,10 @@ def generate_random_grid(grid_attributes: GridAttributes) -> SupermarketGrid:
     cols = grid_attributes.cols
     entrance_coords = grid_attributes.entrance_coords
     exit_coords = grid_attributes.exit_coords
+    adjacency_prob = grid_attributes.adjacency_probability
 
-
-    
     grid: List[List[int]] = [[0] * cols for _ in range(rows)]
     
-    # Probabilidad de que cuando se coloque una estantería de un tipo, se
-    # coloque otra estantería de ese mismo tipo al lado en vez de en una
-    # posición aleatoria
-    print(cfg.ADJACENCY_PROBABILITY)
-    adjacency_prob = cfg.ADJACENCY_PROBABILITY
-
     # Colocar la entrada y salida
     # grid[entrance_coords[0]][entrance_coords[1]] = -2  # Entrada
     # grid[exit_coords[0]][exit_coords[1]] = -1  # Salida
@@ -246,7 +239,7 @@ def generate_n_random_grids(n: int, grid_attributes: GridAttributes, should_plot
         if should_plot:
             plot_grid_with_ids(grid)
 
-def get_grid_object() -> SupermarketGrid:
+def get_grid_object(adjacency_probability: float = 1) -> SupermarketGrid:
     """
     Obtener la cuadrícula generada a partir de los atributos de la cuadrícula.
     :return: Cuadrícula generada.
@@ -266,15 +259,15 @@ if __name__ == "__main__":
     # plot_grid_with_ids(grid_2)
     # plot_grid_difference(grid, grid_2)
 
-    cfg.ADJACENCY_PROBABILITY = 1.0
-    grid_attributes = calculate_grid_dimensions()
+    adjacency_probability = 1.0
+    grid_attributes = calculate_grid_dimensions(adjacency_probability)
     grids = []
     names = []
     for i in range(2):
-        names.append(f"Probabilidad de adyacencia: {cfg.ADJACENCY_PROBABILITY}")
+        names.append(f"Probabilidad de adyacencia: {grid_attributes.adjacency_probability}")
         grid = generate_random_grid(grid_attributes)
         grids.append(grid)
-        cfg.ADJACENCY_PROBABILITY -= 1
+        grid_attributes.adjacency_probability = 0
     plot_multiple_grids(grids, names)
     changed_grid = swap_n_shelves(grids[0], 20)
     plot_grid_difference(grids[0], changed_grid)

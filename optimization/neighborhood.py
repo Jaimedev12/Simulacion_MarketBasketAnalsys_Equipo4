@@ -17,7 +17,7 @@ def swap_cells(grid: SupermarketGrid, pos1: Tuple[int, int], pos2: Tuple[int, in
     grid.grid[pos1[0]][pos1[1]] = cell_info_2
     grid.grid[pos2[0]][pos2[1]] = cell_info_1
 
-def swap_n_shelves(grid: SupermarketGrid, n: int, overwrite: bool=False):
+def swap_n_shelves(grid: SupermarketGrid, n: int, overwrite: bool=False, swap_walkable_cells: bool = False):
     """
     Intercambiar n pares de celdas en la cuadrícula. El intercambio puede ser entre:
     - Dos estanterías.
@@ -59,6 +59,9 @@ def swap_n_shelves(grid: SupermarketGrid, n: int, overwrite: bool=False):
         if cell1.is_walkable and cell2.is_walkable:
             continue  # Skip this swap as it's pointless
 
+        if (cell1.is_walkable or cell2.is_walkable) and not swap_walkable_cells: 
+            continue
+
         # Perform the swap
         swap_cells(new_grid, pos1, pos2)
 
@@ -74,7 +77,7 @@ def swap_n_shelves(grid: SupermarketGrid, n: int, overwrite: bool=False):
 
     return new_grid
 
-def gen_neighbors(grid: SupermarketGrid, n: int, swap_amount: int = 20) -> List[SupermarketGrid]:
+def gen_neighbors(grid: SupermarketGrid, n: int, swap_amount: int = 20, swap_walkable_cells: bool = False) -> List[SupermarketGrid]:
     """
     Genera n vecinos de la cuadrícula dada.
     :param grid: Cuadrícula a modificar.
@@ -84,6 +87,6 @@ def gen_neighbors(grid: SupermarketGrid, n: int, swap_amount: int = 20) -> List[
     """
     neighbors = []
     for _ in range(n):
-        neighbor = swap_n_shelves(grid, swap_amount)
+        neighbor = swap_n_shelves(grid, swap_amount, swap_walkable_cells=swap_walkable_cells)
         neighbors.append(neighbor)
     return neighbors

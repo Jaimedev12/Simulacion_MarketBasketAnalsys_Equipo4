@@ -87,10 +87,15 @@ class TabuSearchOptimizer:
             Iteration(self.best_solution, self.best_score, -1)
         )
 
-    def _get_best_neighbor(self, tries_allowed: int = 5) -> Tuple[SupermarketGrid, TabuSearchScore, bool]:
+    def _get_best_neighbor(self, tries_allowed: int = 5, swap_walkable_cells: bool = False) -> Tuple[SupermarketGrid, TabuSearchScore, bool]:
         while tries_allowed > 0:
             tries_allowed -= 1
-            neighbors = gen_neighbors(self.current_solution, n=30, swap_amount=3)
+            neighbors = gen_neighbors(
+                self.current_solution, 
+                n=30, 
+                swap_amount=3, 
+                swap_walkable_cells=swap_walkable_cells
+                )
             
             # Filtrar vecinos no tabú
             valid_neighbors = [
@@ -118,11 +123,14 @@ class TabuSearchOptimizer:
             self, 
             iterations: int = 10, 
             tabu_size: int = 10, 
-            tries_allowed: int = 5
+            tries_allowed: int = 5,
+            swap_walkable_cells: bool = True,
             ) -> Tuple[SupermarketGrid, TabuSearchScore]:
         for cur_iter in range(iterations):
 
-            best_neighbor, best_score, is_worth_continuing = self._get_best_neighbor(tries_allowed=tries_allowed)
+            best_neighbor, best_score, is_worth_continuing = self._get_best_neighbor(
+                tries_allowed=tries_allowed
+                )
 
             if not is_worth_continuing:
                 print("No se encontró un mejor vecino.")
