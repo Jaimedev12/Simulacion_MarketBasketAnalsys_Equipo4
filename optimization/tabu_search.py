@@ -61,7 +61,7 @@ class TabuSearchOptimizer:
         self.iterations: List[Iteration] = []
         self.log_iteration(0)
         
-    def change_curr_grid(self, new_grid: SupermarketGrid, restart_score: bool = False):
+    def change_curr_grid(self, new_grid: SupermarketGrid, restart_score: bool = False, restart_iterations: bool = False):
         """Cambia la cuadrícula actual"""
         self.tabu_list = []
 
@@ -80,6 +80,9 @@ class TabuSearchOptimizer:
             self.best_solution = deepcopy(self.current_solution)
             self.best_walk_heat_map = self.current_walk_heat_map
             self.best_impulse_heat_map = self.current_impulse_heat_map
+        
+        if restart_iterations:
+            self.iterations = []
 
         self.log_iteration(0)
 

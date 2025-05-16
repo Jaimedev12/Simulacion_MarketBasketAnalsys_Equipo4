@@ -14,7 +14,7 @@ class ResultInterpreter:
     def add_iterations(self, iterations: List[Iteration]):
         self.iterations.extend(iterations)
 
-    def store(self, directory: str = "optimization/results"):
+    def store(self, directory: str = "optimization/results", filename: str = "results.npz"):
         # Define the results directory
         
         if os.path.exists(directory):
@@ -57,7 +57,7 @@ class ResultInterpreter:
         impulse_heat_map_array = np.array([it.impulse_heat_map for it in self.iterations], dtype=np.float64)
 
         np.savez(
-            directory+"/results.npz", 
+            directory+"/"+filename, 
             grids=grid_array, 
             scores=scores, 
             it_seq=it_seq, 
@@ -96,9 +96,9 @@ class ResultInterpreter:
 
         return new_grid
 
-    def read_results(self, directory: str = "optimization/results") -> List[Iteration]:
+    def read_results(self, filename: str = "optimization/results/results.npz") -> List[Iteration]:
         # Load the results from the .npz file
-        data = np.load(directory+"/results.npz")
+        data = np.load(filename)
         grids = data['grids']
         scores = data['scores']
         it_seq = data['it_seq']
