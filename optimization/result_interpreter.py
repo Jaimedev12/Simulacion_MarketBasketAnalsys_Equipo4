@@ -8,8 +8,11 @@ import shutil
 
 
 class ResultInterpreter:
-    def __init__(self, iterations: List[Iteration]):
-        self.iterations = iterations
+    def __init__(self):
+        self.iterations: List[Iteration] = []
+
+    def add_iterations(self, iterations: List[Iteration]):
+        self.iterations.extend(iterations)
 
     def store(self, directory: str = "optimization/results"):
         # Define the results directory

@@ -26,21 +26,22 @@ def main():
 
     search_optimizer = TabuSearchOptimizer(ordered_grid, customers=selected_customers)
     search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
-    # search_optimizer.change_curr_grid(random_grid)
-    # search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
-    # search_optimizer.change_curr_grid(balanced_grid)
-    # search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
+    search_optimizer.change_curr_grid(random_grid)
+    search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
+    search_optimizer.change_curr_grid(balanced_grid)
+    search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
     
 
-    interpreter = ResultInterpreter(search_optimizer.iterations)
+    interpreter = ResultInterpreter()
+    interpreter.add_iterations(search_optimizer.iterations)
     interpreter.store()
     
-    search_result = interpreter.read_results()
-    for it in search_result:
-        print(it.iteration_num)
-        print(it.walk_heat_map)
-        print(it.impulse_heat_map)
-        print()
+    # search_result = interpreter.read_results()
+    # for it in search_result:
+    #     print(it.iteration_num)
+    #     print(it.walk_heat_map)
+    #     print(it.impulse_heat_map)
+    #     print()
 
     # plot_multiple_grids([ordered_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])
 
