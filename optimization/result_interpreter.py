@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass
 from optimization.tabu_search import Iteration, TabuSearchScore
 from core.grid import SupermarketGrid, GridInput, CellInfo
@@ -14,13 +15,16 @@ class ResultInterpreter:
     def add_iterations(self, iterations: List[Iteration]):
         self.iterations.extend(iterations)
 
-    def store(self, directory: str = "optimization/results", filename: str = "results.npz"):
+    def update_iterations(self, iterations: List[Iteration]):
+        self.iterations = deepcopy(iterations)
+
+    def store(self, directory: str = "optimization/results", filename: str = "results.npz", overwrite_folder: bool = False):
         # Define the results directory
         
-        if os.path.exists(directory):
+        if os.path.exists(directory) and overwrite_folder:
             shutil.rmtree(directory)
             os.makedirs(directory)    
-        else:
+        elif not os.path.exists(directory):
             # Create directory if it doesn't exist
             os.makedirs(directory)
 

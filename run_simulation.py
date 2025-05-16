@@ -24,17 +24,14 @@ def main():
         
     selected_customers = random.sample(customers, cfg.CUSTOMER_COUNT)
 
-    search_optimizer = TabuSearchOptimizer(ordered_grid, customers=selected_customers)
-    search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
-    search_optimizer.change_curr_grid(random_grid)
-    search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
-    search_optimizer.change_curr_grid(balanced_grid)
-    search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
-    
-
     interpreter = ResultInterpreter()
-    interpreter.add_iterations(search_optimizer.iterations)
-    interpreter.store()
+    search_optimizer = TabuSearchOptimizer(ordered_grid, customers=selected_customers)
+    for i, grid in enumerate([ordered_grid, random_grid, balanced_grid]):
+        search_optimizer.change_curr_grid(grid, True, True)
+        search_optimizer.optimize(iterations=cfg.TABU_ITERATIONS, tabu_size=cfg.TABU_SIZE)
+
+        interpreter.update_iterations(search_optimizer.iterations)
+        interpreter.store(filename=f"results_{i}.npz")
     
     # search_result = interpreter.read_results()
     # for it in search_result:
@@ -42,14 +39,6 @@ def main():
     #     print(it.walk_heat_map)
     #     print(it.impulse_heat_map)
     #     print()
-
-    # plot_multiple_grids([ordered_grid, search_result[0]], ["Initial Grid", "Optimized Grid"])
-
-    # for i, customer_to_simulate in enumerate(selected_customers):
-    #     result: SimulationResult = customer_to_simulate.simulate(ordered_grid)
-    #     if result.path: # Check if path is not empty
-    #         animate_path(ordered_grid, result.path, speed=300) # Adjusted speed
-
 
 if __name__ == "__main__":
     main()

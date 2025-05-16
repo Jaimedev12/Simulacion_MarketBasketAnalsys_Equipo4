@@ -173,7 +173,7 @@ class TabuSearchOptimizer:
             neighbors = gen_neighbors(
                 self.current_solution, 
                 n=30, 
-                swap_amount=3, 
+                swap_amount=5, 
                 swap_walkable_cells=swap_walkable_cells
                 )
             
