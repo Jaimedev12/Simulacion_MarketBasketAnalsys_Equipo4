@@ -2,7 +2,7 @@ from optimization.result_interpreter import ResultInterpreter
 from visualization.result_visualizer import ResultVisualizer
 
 def main():
-    search_result = ResultInterpreter().read_results()
+    search_result = ResultInterpreter().read_results(filename="optimization/results/results_1.npz")
     rv = ResultVisualizer(search_result)
     rv.visualize()
 

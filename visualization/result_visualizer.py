@@ -1,263 +1,189 @@
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+import matplotlib.colors as mcolors
+import numpy as np
 from dataclasses import dataclass
+from typing import List, Dict
 from optimization.tabu_search import Iteration
-from typing import Dict, List
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output
-import plotly.graph_objects as go
-
-@dataclass
-class CellVisData:
-    aisle_id: int
-
-@dataclass
-class DashCellData:
-    x: int
-    y: int
-    aisle_id: int
-    text: str
-
-@dataclass
-class DashGridData:
-    cells: List[DashCellData]
-    unique_aisles: List[int]
+import matplotlib.widgets as widgets
 
 class ResultVisualizer:
     def __init__(self, iterations: List[Iteration]):
         self.iterations: List[Iteration] = iterations
-        self.matrix_per_iteration: List[List[List[CellVisData]]] = []
-        self._initialize_matrices()
-
-    def _initialize_matrices(self):
-        """
-        Initialize a matrix for each iteration.
-        """
+        self.current_iteration = 0
+        self.grid_matrices = []
+        self._prepare_grid_data()
+        
+    def _prepare_grid_data(self):
+        """Convert iteration data to grid matrices for visualization"""
         if not self.iterations:
             return
-
-        # Get grid size from the first iteration
-        rows = self.iterations[0].grid.rows
-        cols = self.iterations[0].grid.cols
-
-        # Initialize a list of matrices (one per iteration)
-        self.matrix_per_iteration = [
-            [[CellVisData(0) for _ in range(cols)] for _ in range(rows)]
-            for _ in range(len(self.iterations))
-        ]
-
-        # Fill each matrix with data from the corresponding iteration
-        for idx, it in enumerate(self.iterations):
-            for i, row in enumerate(it.grid.grid):
-                for j, cell in enumerate(row):
-                    self.matrix_per_iteration[idx][i][j].aisle_id = cell.aisle_id
-
-    def get_data_for_dash(self) -> List[DashGridData]:
-        """
-        Prepare data for Dash: returns a list of dictionaries, one per iteration.
-        Each dictionary contains:
-        - 'cells': list of cell data (x, y, aisle_id, text)
-        - 'unique_aisles': list of unique aisle_ids
-        """
-        all_data: List[DashGridData] = []
-
-        # Get grid size from the first iteration
-        rows = len(self.matrix_per_iteration[0])
-        cols = len(self.matrix_per_iteration[0][0])
-
-        for iteration_idx, matrix in enumerate(self.matrix_per_iteration):
-            cells: List[DashCellData] = []
-            unique_aisles = set()
-
+            
+        for iteration in self.iterations:
+            grid = iteration.grid
+            rows, cols = grid.rows, grid.cols
+            matrix = np.zeros((rows, cols), dtype=int)
+            
             for i in range(rows):
                 for j in range(cols):
-                    cell = matrix[i][j]
-
-                    cells.append(DashCellData(
-                        x=j,
-                        y=i,
-                        aisle_id=cell.aisle_id,
-                        text=f"Iteration: {iteration_idx}, Aisle ID: {cell.aisle_id}"
-                    ))
-
-                    unique_aisles.add(cell.aisle_id)
-
-            all_data.append(DashGridData(
-                cells=cells,
-                unique_aisles=sorted(list(unique_aisles))
-            ))
-
-        return all_data
+                    matrix[i, j] = grid.grid[i][j].aisle_id
+                    
+            self.grid_matrices.append(matrix)
     
     def visualize(self):
-        """
-        Launch an interactive visualization using Dash.
-        """
-        # Get data for all iterations
-        all_data = self.get_data_for_dash()
-        num_iterations = len(all_data)
-
-        if num_iterations == 0:
+        """Display the grid with a slider for iteration navigation"""
+        if not self.iterations or not self.grid_matrices:
             print("No iterations to visualize.")
             return
-
-        # Extract unique aisle IDs across all iterations
-        all_unique_aisles = set()
-        for data in all_data:
-            all_unique_aisles.update(data.unique_aisles)
-        all_unique_aisles = sorted(list(all_unique_aisles))
-
-        # Map aisle IDs to colors
-        aisle_colors: Dict[int, str]= {
-            aisle: f'hsl({i * 360 / len(all_unique_aisles)}, 70%, 50%)'
-            for i, aisle in enumerate(all_unique_aisles)
-        }
-        aisle_colors[0] = 'white'  # Pasillo color
-
-        # Initial figure (show first iteration)
-        initial_cells = all_data[0].cells
-        initial_colors = [aisle_colors[cell.aisle_id] for cell in initial_cells]
-
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=[cell.x for cell in initial_cells],
-            y=[cell.y for cell in initial_cells],
-            mode='markers',
-            marker=dict(size=10, color=initial_colors, showscale=False),
-            text=[cell.text for cell in initial_cells],
-            customdata=[cell.aisle_id for cell in initial_cells],
-            hoverinfo='text',
-            hovertemplate='<b>%{text}</b><extra></extra>'
-        ))
-
-        fig.update_layout(
-            title="Interactive Grid with Aisle ID Highlights",
-            xaxis_title="Columns",
-            yaxis_title="Rows",
-            width=600,
-            height=600,
-            xaxis=dict(tickmode='linear'),
-            yaxis=dict(tickmode='linear')
-        )
-
-        # Create Dash app
-        app = dash.Dash(__name__)
-        app.layout = html.Div([
-            dcc.Store(id='console-logger'),
-            html.Div(id='console-output', style={'display': 'none'}),
-            dcc.Slider(
-                id='iteration-slider',
-                min=0,
-                max=num_iterations - 1,
-                value=0,
-                marks={i: f"Iteration {i}" for i in range(num_iterations)}
-            ),
-            dcc.Graph(id='grid-plot', figure=fig)
-        ])
-
-        # app.clientside_callback(
-        #     """
-        #     function(data) {
-        #         if(data) {
-        #             console.log(data);
-        #         }
-        #         return null;
-        #     }
-        #     """,
-        #     Output('console-output', 'children'),
-        #     [Input('console-logger', 'data')]
-        # )
-
-        # Single callback to handle both slider and hover
-        # @app.callback(
-        #     [Output('grid-plot', 'figure'), 
-        #         Output('console-logger', 'data')],
-        #     [Input('iteration-slider', 'value'), 
-        #         Input('grid-plot', 'hoverData')]
-        # )
-
-        @app.callback(
-            Output('grid-plot', 'figure'),
-            [Input('iteration-slider', 'value'), 
-                Input('grid-plot', 'hoverData')]
-        )
-        def update_figure(iteration_idx: int, hoverData):
-            # Determine which input triggered the callback
-            ctx = dash.callback_context
-
-            if not ctx.triggered:
-                default_data = all_data[0]
-                default_cells = default_data.cells
-                default_colors = [aisle_colors[cell.aisle_id] for cell in default_cells]
-                
-                new_fig = go.Figure()
-                new_fig.add_trace(go.Scatter(
-                    x=[cell.x for cell in initial_cells],
-                    y=[cell.y for cell in initial_cells],
-                    mode='markers',
-                    marker=dict(size=10, color=initial_colors, showscale=False),
-                    text=[cell.text for cell in initial_cells],
-                    customdata=[cell.aisle_id for cell in initial_cells],
-                    hoverinfo='text',
-                    hovertemplate='<b>%{text}</b><extra></extra>'
-                ))
-
-                return new_fig
             
-            triggered_aisle_id: int = ctx.triggered[0]["value"]["points"][0]["customdata"]
-            trigger_id: str = ctx.triggered[0]['prop_id'].split('.')[0]
+        # Set up the figure and axes
+        fig, ax = plt.subplots(figsize=(12, 10))
+        plt.subplots_adjust(bottom=0.2)  # Make room for the slider
+        
+        # Get unique aisle IDs for color mapping
+        all_aisle_ids = np.unique(np.concatenate([m.flatten() for m in self.grid_matrices]))
+        max_aisle_id = max(all_aisle_ids)
+        
+        # Create custom colors for visualization
+        custom_colors = {
+            0: "white",    # Walkable space
+            -1: "red",     # Exit
+            -2: "green",   # Entrance
+        }
+        
+        # Generate colors for aisle IDs
+        for i in range(1, max_aisle_id + 1):
+            color_tuple = plt.get_cmap('tab20')(i % 20)
+            custom_colors[i] = mcolors.to_hex(color_tuple)
+            
+        # Create a colormap - add "highlighted" version at the end
+        base_colors = [custom_colors.get(i, "gray") for i in range(max_aisle_id + 1)]
+        highlight_colors = ["#FFA500", "#CCCCCC"]  # Orange for highlighting
+        color_list = base_colors + highlight_colors
+        cmap = ListedColormap(color_list)
+        
+        # Store original data and create a copy for modifications
+        current_grid_idx = 0
+        grid_data = self.grid_matrices[current_grid_idx].copy()
+        highlighted_grid = grid_data.copy()
+        
+        # Initial plot
+        im = ax.imshow(highlighted_grid, cmap=cmap, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
+        ax.set_title(f"Layout - Iteration {self.current_iteration}")
+        
+        # Add text labels - we'll keep these static to improve performance
+        text_labels = []
+        for i in range(grid_data.shape[0]):
+            for j in range(grid_data.shape[1]):
+                cell_value = grid_data[i, j]
+                if cell_value != 0:  # Only label non-walkable cells
+                    text = ax.text(j, i, str(cell_value), ha="center", va="center", 
+                            color="black", fontsize=8)
+                    text_labels.append(text)
+        
+        # Add a slider for iteration selection
+        ax_slider = plt.axes((0.25, 0.1, 0.65, 0.03))
+        slider = widgets.Slider(
+            ax=ax_slider,
+            label='Iteration',
+            valmin=0,
+            valmax=len(self.iterations) - 1,
+            valinit=0,
+            valstep=1
+        )
+        
+        # Last hovered aisle for efficient updates
+        last_hovered_aisle = None
+        
+        # Update function for slider
+        def update(val):
+            nonlocal current_grid_idx, grid_data, highlighted_grid, last_hovered_aisle
+            
+            # Reset hover tracking
+            last_hovered_aisle = None
+            
+            # Update the current iteration index
+            current_grid_idx = int(slider.val)
+            
+            # Update the base data
+            grid_data = self.grid_matrices[current_grid_idx].copy()
+            highlighted_grid = grid_data.copy()
+            
+            # Update the image data directly - much faster than clearing and redrawing
+            im.set_array(highlighted_grid)
+            
+            # Update title
+            ax.set_title(f"Layout - Iteration {current_grid_idx}")
+            
+            # Update text labels - could be optimized further
+            for text in text_labels:
+                text.remove()
+            text_labels.clear()
+            
+            for i in range(grid_data.shape[0]):
+                for j in range(grid_data.shape[1]):
+                    cell_value = grid_data[i, j]
+                    if cell_value != 0:  # Only label non-walkable cells
+                        text = ax.text(j, i, str(cell_value), ha="center", va="center", 
+                                color="black", fontsize=8)
+                        text_labels.append(text)
+            
+            fig.canvas.draw_idle()
+        
+        slider.on_changed(update)
+        
+        # Add a highlight feature on mouse hover
+        def hover(event):
+            nonlocal highlighted_grid, last_hovered_aisle, grid_data
+            
+            if event.inaxes == ax:
+                x, y = int(event.xdata + 0.5), int(event.ydata + 0.5)
+                if (0 <= y < grid_data.shape[0] and 0 <= x < grid_data.shape[1]):
+                    aisle_id = grid_data[y, x]
+                    
+                    # Only do work if we're hovering over a different aisle than before
+                    if aisle_id != last_hovered_aisle:
+                        # Update title
+                        ax.set_title(f"Layout - Iteration {current_grid_idx} - Aisle {aisle_id}")
+                        
+                        # Reset highlighted grid to original data
+                        highlighted_grid = grid_data.copy()
+                        
+                        
+                        # Highlight cells with the same aisle ID
+                        if aisle_id > 0:  # Only highlight actual aisles, not walkable/entry/exit
+                            # First check if we have any matching cells
+                            matching_mask = (grid_data == aisle_id)
+                            matching_count = np.sum(matching_mask)
 
-            console_data = {
-                'iteration': iteration_idx,
-                'aisle_id': triggered_aisle_id,
-                'context': 'Updating figure'
-            }
+                            # Gray out all non-walkable cells first
+                            non_walkable_mask = (grid_data > 0)
+                            highlighted_grid[non_walkable_mask] = max_aisle_id + 1  # Gray color
 
-            # Get the current data
-            data = all_data[iteration_idx]
-            cells = data.cells
-            colors = [aisle_colors[cell.aisle_id] for cell in cells]
-
-            # Create new figure
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=[cell.x for cell in initial_cells],
-                y=[cell.y for cell in initial_cells],
-                mode='markers',
-                marker=dict(size=10, color=initial_colors, showscale=False),
-                customdata=[cell.aisle_id for cell in initial_cells],
-                text=[cell.text for cell in initial_cells],
-                hoverinfo='text',
-                hovertemplate='<b>%{text}</b><extra></extra>'
-            ))
-
-            if triggered_aisle_id == 0:
-                console_data['context'] = 'Hovering over aisle 0'
-                return fig
-
-            fig.update_layout(
-                title=f"Interactive Grid - Iteration {iteration_idx}",
-                xaxis_title="Columns",
-                yaxis_title="Rows",
-                width=600,
-                height=600,
-                xaxis=dict(tickmode='linear'),
-                yaxis=dict(tickmode='linear')
-            )
-
-            # Highlight cells with the same aisle_id if hover is active
-            if trigger_id == 'grid-plot' and hoverData:
-                new_colors: List[str] = []
-                for cell in cells:
-                    if cell.aisle_id == triggered_aisle_id:
-                        new_colors.append(aisle_colors[cell.aisle_id])
-                    elif cell.aisle_id == 0:
-                        new_colors.append('white')
-                    else:
-                        new_colors.append('lightgray')
-
-                fig.data[0].update(marker=dict(color=new_colors))
-
-            return fig
-
-        # Run the Dash app
-        app.run(debug=True)
+                            # Then highlight matching cells in orange
+                            highlighted_grid[matching_mask] = max_aisle_id + 0  # Orange color
+                        
+                        # Update the image data directly - much faster than redrawing
+                        im.set_array(highlighted_grid)
+                        
+                        # Remember which aisle we're hovering over
+                        last_hovered_aisle = aisle_id
+                        
+                        # Trigger a redraw of just the modified parts
+                        fig.canvas.draw_idle()
+        
+        def on_leave(event):
+            nonlocal highlighted_grid, last_hovered_aisle, grid_data
+            
+            if last_hovered_aisle is not None:
+                # Reset the grid to original state
+                highlighted_grid = grid_data.copy()
+                im.set_array(highlighted_grid)
+                ax.set_title(f"Layout - Iteration {current_grid_idx}")
+                last_hovered_aisle = None
+                fig.canvas.draw_idle()
+        
+        fig.canvas.mpl_connect("motion_notify_event", hover)
+        fig.canvas.mpl_connect("axes_leave_event", on_leave)
+        
+        plt.show()
