@@ -1,3 +1,4 @@
+from matplotlib import colors
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import matplotlib.colors as mcolors
@@ -97,26 +98,63 @@ class ResultVisualizer:
         base_colors = [custom_colors.get(i, "gray") for i in range(max_aisle_id + 1)]
         highlight_colors = ["#FFA500", "#CCCCCC"]  # Orange for highlighting
         color_list = base_colors + highlight_colors
-        cmap = ListedColormap(color_list)
+        cmap_layout = ListedColormap(color_list)
+
+        cmap_heatmap = plt.cm.get_cmap('viridis')
         
         # Store original data and create a copy for modifications
         current_grid_idx = 0
         grid_data = self.grid_matrices[current_grid_idx].copy()
         highlighted_grid = grid_data.copy()
         
+        # Track current visualization mode
+        vis_mode = 'layout'  # 'layout' or 'heatmap'
+        
+        # Create function to generate impulse index grid
+        def create_impulse_grid(grid):
+            impulse_grid = np.zeros_like(grid, dtype=float)
+            
+            for i in range(grid.shape[0]):
+                for j in range(grid.shape[1]):
+                    aisle_id = grid[i, j]
+                    if aisle_id > 0 and str(aisle_id) in self.aisle_info:
+                        impulse_grid[i, j] = self.aisle_info[str(aisle_id)].get('impulse_index', 0)
+                    else:
+                        # Keep special values for entrance/exit
+                        if aisle_id < 0:
+                            impulse_grid[i, j] = -1  # We'll handle these specially
+                        else:
+                            impulse_grid[i, j] = 0
+                        
+            return impulse_grid
+        
+        # Initial impulse grid
+        impulse_grid = create_impulse_grid(grid_data)
+
         # Initial plot
-        im = grid_ax.imshow(highlighted_grid, cmap=cmap, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
+        im = grid_ax.imshow(highlighted_grid, cmap=cmap_layout, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
         grid_ax.set_title(f"Layout - Iteration {self.current_iteration}")
         
         # Add text labels - make them smaller to reduce overlap
         text_labels = []
-        for i in range(grid_data.shape[0]):
-            for j in range(grid_data.shape[1]):
-                cell_value = grid_data[i, j]
-                if cell_value != 0:  # Only label non-walkable cells
-                    text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
-                            color="black", fontsize=7)
-                    text_labels.append(text) 
+        def update_text_labels():
+            nonlocal text_labels
+            # Clear existing labels
+            for text in text_labels:
+                text.remove()
+            text_labels.clear()
+            
+            # Only add labels in layout mode
+            if vis_mode == 'layout':
+                for i in range(grid_data.shape[0]):
+                    for j in range(grid_data.shape[1]):
+                        cell_value = grid_data[i, j]
+                        if cell_value != 0:  # Only label non-walkable cells
+                            text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
+                                    color="black", fontsize=7)
+                            text_labels.append(text)
+        
+        update_text_labels()
         
         # Function to update score information
         def update_score_info(idx):
@@ -141,12 +179,21 @@ class ResultVisualizer:
             valstep=1
         )
     
+        ax_radio = plt.axes((0.4, 0.03, 0.2, 0.04))
+        radio = widgets.RadioButtons(ax_radio, ('Layout', 'Heatmap'), active=0)
+
         # Last hovered aisle for efficient updates
         last_hovered_aisle = None
+
+        cbar_ax = plt.axes((0.77, 0.3, 0.02, 0.4))
+        cbar = plt.colorbar(plt.cm.ScalarMappable(norm=colors.Normalize(0.0, 1.0), cmap=cmap_heatmap), 
+                        cax=cbar_ax)
+        cbar.set_label('Impulse Index')
+        cbar_ax.set_visible(False)
         
         # Update function for slider
         def update(val):
-            nonlocal current_grid_idx, grid_data, highlighted_grid, last_hovered_aisle
+            nonlocal current_grid_idx, grid_data, highlighted_grid, last_hovered_aisle, impulse_grid
             
             # Reset hover tracking
             last_hovered_aisle = None
@@ -157,9 +204,19 @@ class ResultVisualizer:
             # Update the base data
             grid_data = self.grid_matrices[current_grid_idx].copy()
             highlighted_grid = grid_data.copy()
+            impulse_grid = create_impulse_grid(grid_data)
             
-            # Update the image data directly - much faster than clearing and redrawing
-            im.set_array(highlighted_grid)
+            # Update visualization based on current mode
+            if vis_mode == 'layout':
+                im.set_array(highlighted_grid)
+                im.set_cmap(cmap_layout)
+                im.set_clim(vmin=-2, vmax=max_aisle_id + 2)
+                cbar_ax.set_visible(False)
+            else:  # heatmap mode
+                im.set_array(impulse_grid)
+                im.set_cmap(cmap_heatmap)
+                im.set_clim(vmin=0, vmax=1)  # Impulse index ranges from 0 to 1
+                cbar_ax.set_visible(True)
             
             # Clear aisle info text
             info_text.set_text("")
@@ -167,24 +224,31 @@ class ResultVisualizer:
             # Update score information
             update_score_info(current_grid_idx)
             
-            # Update title
-            grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
+            # Update title based on mode
+            if vis_mode == 'layout':
+                grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
+            else:
+                grid_ax.set_title(f"Impulse Index Heatmap - Iteration {current_grid_idx}")
             
-            # Update text labels - could be optimized further
-            for text in text_labels:
-                text.remove()
-            text_labels.clear()
-            
-            for i in range(grid_data.shape[0]):
-                for j in range(grid_data.shape[1]):
-                    cell_value = grid_data[i, j]
-                    if cell_value != 0:  # Only label non-walkable cells
-                        text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
-                                color="black", fontsize=7)
-                        text_labels.append(text)
+            # Update text labels
+            update_text_labels()
             
             fig.canvas.draw_idle()
+
+        # Mode change function
+        def mode_change(label):
+            nonlocal vis_mode
+            
+            if label == 'Layout':
+                vis_mode = 'layout'
+            else:
+                vis_mode = 'heatmap'
+            
+            # Update the visualization
+            update(slider.val)
+        
         slider.on_changed(update)
+        radio.on_clicked(mode_change)
         
         # Add a highlight feature on mouse hover
         def hover(event):
@@ -198,7 +262,8 @@ class ResultVisualizer:
                     # Only do work if we're hovering over a different aisle than before
                     if aisle_id != last_hovered_aisle:
                         # Update title
-                        grid_ax.set_title(f"Layout - Iteration {current_grid_idx} - Aisle {aisle_id}")
+                        mode_prefix = "Layout" if vis_mode == 'layout' else "Impulse Index Heatmap"
+                        grid_ax.set_title(f"{mode_prefix} - Iteration {current_grid_idx} - Aisle {aisle_id}")
                         
                         # Reset highlighted grid to original data
                         highlighted_grid = grid_data.copy()
@@ -226,36 +291,38 @@ class ResultVisualizer:
                             else:
                                 info_text.set_text(f"Aisle ID: {aisle_id}\n\nNo additional data available")
                         
-                        # Highlight cells with the same aisle ID
-                        if aisle_id > 0:  # Only highlight actual aisles, not walkable/entry/exit
-                            # First check if we have any matching cells
-                            matching_mask = (grid_data == aisle_id)
-                            matching_count = np.sum(matching_mask)
-
+                        # For layout mode, highlight cells with the same aisle ID
+                        if vis_mode == 'layout' and aisle_id > 0:
                             # Gray out all non-walkable cells first
                             non_walkable_mask = (grid_data > 0)
                             highlighted_grid[non_walkable_mask] = max_aisle_id + 1  # Gray color
 
                             # Then highlight matching cells in orange
+                            matching_mask = (grid_data == aisle_id)
                             highlighted_grid[matching_mask] = max_aisle_id + 0  # Orange color
-                        
-                        # Update the image data directly - much faster than clearing and redrawing
-                        im.set_array(highlighted_grid)
+                            
+                            # Update the image data
+                            im.set_array(highlighted_grid)
                         
                         # Remember which aisle we're hovering over
                         last_hovered_aisle = aisle_id
                         
-                        # Trigger a redraw of just the modified parts
+                        # Trigger a redraw
                         fig.canvas.draw_idle()
-        
+
+
         def on_leave(event):
             nonlocal highlighted_grid, last_hovered_aisle, grid_data
             
             if last_hovered_aisle is not None:
                 # Reset the grid to original state
-                highlighted_grid = grid_data.copy()
-                im.set_array(highlighted_grid)
-                grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
+                if vis_mode == 'layout':
+                    highlighted_grid = grid_data.copy()
+                    im.set_array(highlighted_grid)
+                    grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
+                else:
+                    grid_ax.set_title(f"Impulse Index Heatmap - Iteration {current_grid_idx}")
+                    
                 info_text.set_text("")
                 last_hovered_aisle = None
                 fig.canvas.draw_idle()
@@ -263,5 +330,4 @@ class ResultVisualizer:
         fig.canvas.mpl_connect("motion_notify_event", hover)
         fig.canvas.mpl_connect("axes_leave_event", on_leave)
         
-        # plt.tight_layout()
         plt.show()
