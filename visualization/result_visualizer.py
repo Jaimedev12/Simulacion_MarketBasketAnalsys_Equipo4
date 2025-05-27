@@ -50,12 +50,14 @@ class ResultVisualizer:
             return
             
         # Set up the figure and axes with a side panel for information
-        fig = plt.figure(figsize=(16, 8))
+        fig = plt.figure(figsize=(16, 9))
             
         # Create a layout with grid on left and info panel on right
         cbar_ax = fig.add_subplot(1, 32, 6)  # Grid takes 1/32 of width
         grid_ax = fig.add_subplot(1, 4, (2, 3))  # Grid takes 2/4 of width
         info_ax = fig.add_subplot(1, 4, 4)       # Info panel takes 1/4 of width
+        
+        # Create radio buttons on the side panel
         ax_radio = fig.add_subplot(3, 6, 13)
         
         # Hide axes for info panel but keep border
@@ -72,11 +74,11 @@ class ResultVisualizer:
                             fontsize=11)
         
         score_text = info_ax.text(0.05, 0.95, "", 
-                         verticalalignment='top',
-                         wrap=True,
-                         fontsize=11,
-                         fontweight='bold',
-                         color='navy')
+                        verticalalignment='top',
+                        wrap=True,
+                        fontsize=11,
+                        fontweight='bold',
+                        color='navy')
         
         plt.subplots_adjust(bottom=0.10)
 
@@ -102,7 +104,9 @@ class ResultVisualizer:
         color_list = base_colors + highlight_colors
         cmap_layout = ListedColormap(color_list)
 
-        cmap_heatmap = plt.cm.get_cmap('viridis')
+        # Use different colormaps for different heatmap types
+        cmap_impulse_index = plt.cm.get_cmap('viridis')    # For impulse index (potential)
+        cmap_purchases = plt.cm.get_cmap('plasma')         # For actual purchases
         
         # Store original data and create a copy for modifications
         current_grid_idx = 0
@@ -110,7 +114,7 @@ class ResultVisualizer:
         highlighted_grid = grid_data.copy()
         
         # Track current visualization mode
-        vis_mode = 'layout'  # 'layout' or 'heatmap'
+        vis_mode = 'layout'  # 'layout', 'heatmap' or 'purchases'
         
         # Create function to generate impulse index grid
         def create_impulse_grid(grid):
@@ -127,11 +131,14 @@ class ResultVisualizer:
                             impulse_grid[i, j] = -1  # We'll handle these specially
                         else:
                             impulse_grid[i, j] = 0
-                        
+                            
             return impulse_grid
         
         # Initial impulse grid
         impulse_grid = create_impulse_grid(grid_data)
+        
+        # Get the purchase heatmap from the iteration data
+        purchase_heatmap = self.iterations[current_grid_idx].impulse_heat_map
 
         # Initial plot
         im = grid_ax.imshow(highlighted_grid, cmap=cmap_layout, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
@@ -180,23 +187,22 @@ class ResultVisualizer:
             valinit=0,
             valstep=1
         )
-    
         
-        radio = widgets.RadioButtons(ax_radio, ('Layout', 'Impulse Index'), active=0)
+        # Add a third option for purchase heatmap
+        radio = widgets.RadioButtons(ax_radio, ('Layout', 'Impulse Index', 'Purchase Heatmap'), active=0)
         ax_radio.set_title("Display Mode")
 
         # Last hovered aisle for efficient updates
         last_hovered_aisle = None
-
         
-        cbar = plt.colorbar(plt.cm.ScalarMappable(norm=colors.Normalize(0.0, 1.0), cmap=cmap_heatmap), 
+        cbar = plt.colorbar(plt.cm.ScalarMappable(norm=colors.Normalize(0.0, 1.0), cmap=cmap_impulse_index), 
                         cax=cbar_ax)
         cbar.set_label('Impulse Index')
         cbar_ax.set_visible(False)
         
         # Update function for slider
         def update(val):
-            nonlocal current_grid_idx, grid_data, highlighted_grid, last_hovered_aisle, impulse_grid
+            nonlocal current_grid_idx, grid_data, highlighted_grid, last_hovered_aisle, impulse_grid, purchase_heatmap
             
             # Reset hover tracking
             last_hovered_aisle = None
@@ -208,6 +214,7 @@ class ResultVisualizer:
             grid_data = self.grid_matrices[current_grid_idx].copy()
             highlighted_grid = grid_data.copy()
             impulse_grid = create_impulse_grid(grid_data)
+            purchase_heatmap = self.iterations[current_grid_idx].impulse_heat_map
             
             # Update visualization based on current mode
             if vis_mode == 'layout':
@@ -215,10 +222,19 @@ class ResultVisualizer:
                 im.set_cmap(cmap_layout)
                 im.set_clim(vmin=-2, vmax=max_aisle_id + 2)
                 cbar_ax.set_visible(False)
-            else:  # heatmap mode
+            elif vis_mode == 'heatmap':
                 im.set_array(impulse_grid)
-                im.set_cmap(cmap_heatmap)
+                im.set_cmap(cmap_impulse_index)
                 im.set_clim(vmin=0, vmax=1)  # Impulse index ranges from 0 to 1
+                cbar.set_label('Impulse Index')
+                cbar.mappable.set_cmap(cmap_impulse_index)
+                cbar_ax.set_visible(True)
+            else:  # purchases mode
+                im.set_array(purchase_heatmap)
+                im.set_cmap(cmap_purchases)
+                im.set_clim(vmin=0, vmax=1)  # Normalized purchase heatmap
+                cbar.set_label('Purchase Frequency')
+                cbar.mappable.set_cmap(cmap_purchases)
                 cbar_ax.set_visible(True)
             
             # Clear aisle info text
@@ -230,8 +246,10 @@ class ResultVisualizer:
             # Update title based on mode
             if vis_mode == 'layout':
                 grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
-            else:
+            elif vis_mode == 'heatmap':
                 grid_ax.set_title(f"Impulse Index Heatmap - Iteration {current_grid_idx}")
+            else:
+                grid_ax.set_title(f"Purchase Heatmap - Iteration {current_grid_idx}")
             
             # Update text labels
             update_text_labels()
@@ -244,8 +262,10 @@ class ResultVisualizer:
             
             if label == 'Layout':
                 vis_mode = 'layout'
-            else:
+            elif label == 'Impulse Index':
                 vis_mode = 'heatmap'
+            else:  # 'Purchase Heatmap'
+                vis_mode = 'purchases'
             
             # Update the visualization
             update(slider.val)
@@ -265,7 +285,12 @@ class ResultVisualizer:
                     # Only do work if we're hovering over a different aisle than before
                     if aisle_id != last_hovered_aisle:
                         # Update title
-                        mode_prefix = "Layout" if vis_mode == 'layout' else "Impulse Index Heatmap"
+                        if vis_mode == 'layout':
+                            mode_prefix = "Layout"
+                        elif vis_mode == 'heatmap':
+                            mode_prefix = "Impulse Index Heatmap"
+                        else:
+                            mode_prefix = "Purchase Heatmap"
                         grid_ax.set_title(f"{mode_prefix} - Iteration {current_grid_idx} - Aisle {aisle_id}")
                         
                         # Reset highlighted grid to original data
@@ -313,7 +338,6 @@ class ResultVisualizer:
                         # Trigger a redraw
                         fig.canvas.draw_idle()
 
-
         def on_leave(event):
             nonlocal highlighted_grid, last_hovered_aisle, grid_data
             
@@ -323,8 +347,10 @@ class ResultVisualizer:
                     highlighted_grid = grid_data.copy()
                     im.set_array(highlighted_grid)
                     grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
-                else:
+                elif vis_mode == 'heatmap':
                     grid_ax.set_title(f"Impulse Index Heatmap - Iteration {current_grid_idx}")
+                else:
+                    grid_ax.set_title(f"Purchase Heatmap - Iteration {current_grid_idx}")
                     
                 info_text.set_text("")
                 last_hovered_aisle = None
