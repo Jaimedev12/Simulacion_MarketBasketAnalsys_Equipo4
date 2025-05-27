@@ -48,9 +48,25 @@ class ResultVisualizer:
             print("No iterations to visualize.")
             return
             
-        # Set up the figure and axes
-        fig, ax = plt.subplots(figsize=(12, 10))
-        plt.subplots_adjust(bottom=0.2)  # Make room for the slider
+        # Set up the figure and axes with a side panel for information
+        fig = plt.figure(figsize=(16, 8))
+            
+        # Create a layout with grid on left and info panel on right
+        grid_ax = fig.add_subplot(1, 4, (1, 3))  # Grid takes 3/4 of width
+        info_ax = fig.add_subplot(1, 4, 4)       # Info panel takes 1/4 of width
+        
+        # Hide axes for info panel but keep border
+        info_ax.set_xticks([])
+        info_ax.set_yticks([])
+        
+        # Set up info panel title
+        info_ax.set_title("Aisle Information")
+        
+        # Add an empty text box in the info panel
+        info_text = info_ax.text(0.05, 0.95, "", 
+                            verticalalignment='top', 
+                            wrap=True,
+                            fontsize=11)
         
         # Get unique aisle IDs for color mapping
         all_aisle_ids = np.unique(np.concatenate([m.flatten() for m in self.grid_matrices]))
@@ -80,25 +96,27 @@ class ResultVisualizer:
         highlighted_grid = grid_data.copy()
         
         # Initial plot
-        im = ax.imshow(highlighted_grid, cmap=cmap, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
-        ax.set_title(f"Layout - Iteration {self.current_iteration}")
+        im = grid_ax.imshow(highlighted_grid, cmap=cmap, interpolation="nearest", vmin=-2, vmax=max_aisle_id + 2)
+        grid_ax.set_title(f"Layout - Iteration {self.current_iteration}")
         
-        # Add text labels - we'll keep these static to improve performance
+        # Add text labels - make them smaller to reduce overlap
         text_labels = []
         for i in range(grid_data.shape[0]):
             for j in range(grid_data.shape[1]):
                 cell_value = grid_data[i, j]
                 if cell_value != 0:  # Only label non-walkable cells
-                    text = ax.text(j, i, str(cell_value), ha="center", va="center", 
-                            color="black", fontsize=8)
+                    text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
+                            color="black", fontsize=7)
                     text_labels.append(text)
         
-        # Create info box for aisle data
-        info_text = ax.text(0.02, 0.02, "", transform=ax.transAxes, fontsize=10,
-                           bbox=dict(facecolor='white', alpha=0.8))
+        # Apply tight_layout for the main content
+        # plt.tight_layout()
+
+        # First set bottom margin to leave room for the slider
+        plt.subplots_adjust(bottom=0.15)  # Increase this value to leave more space
         
-        # Add a slider for iteration selection
-        ax_slider = plt.axes((0.25, 0.1, 0.65, 0.03))
+        # AFTER tight_layout(), create the slider axes at the bottom
+        ax_slider = plt.axes((0.2, 0.05, 0.6, 0.03))
         slider = widgets.Slider(
             ax=ax_slider,
             label='Iteration',
@@ -107,6 +125,7 @@ class ResultVisualizer:
             valinit=0,
             valstep=1
         )
+    
         
         # Last hovered aisle for efficient updates
         last_hovered_aisle = None
@@ -132,7 +151,7 @@ class ResultVisualizer:
             info_text.set_text("")
             
             # Update title
-            ax.set_title(f"Layout - Iteration {current_grid_idx}")
+            grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
             
             # Update text labels - could be optimized further
             for text in text_labels:
@@ -143,8 +162,8 @@ class ResultVisualizer:
                 for j in range(grid_data.shape[1]):
                     cell_value = grid_data[i, j]
                     if cell_value != 0:  # Only label non-walkable cells
-                        text = ax.text(j, i, str(cell_value), ha="center", va="center", 
-                                color="black", fontsize=8)
+                        text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
+                                color="black", fontsize=7)
                         text_labels.append(text)
             
             fig.canvas.draw_idle()
@@ -155,7 +174,7 @@ class ResultVisualizer:
         def hover(event):
             nonlocal highlighted_grid, last_hovered_aisle, grid_data
             
-            if event.inaxes == ax:
+            if event.inaxes == grid_ax:
                 x, y = int(event.xdata + 0.5), int(event.ydata + 0.5)
                 if (0 <= y < grid_data.shape[0] and 0 <= x < grid_data.shape[1]):
                     aisle_id = grid_data[y, x]
@@ -163,7 +182,7 @@ class ResultVisualizer:
                     # Only do work if we're hovering over a different aisle than before
                     if aisle_id != last_hovered_aisle:
                         # Update title
-                        ax.set_title(f"Layout - Iteration {current_grid_idx} - Aisle {aisle_id}")
+                        grid_ax.set_title(f"Layout - Iteration {current_grid_idx} - Aisle {aisle_id}")
                         
                         # Reset highlighted grid to original data
                         highlighted_grid = grid_data.copy()
@@ -175,20 +194,21 @@ class ResultVisualizer:
                             impulse_idx = aisle_data.get('impulse_index', 0)
                             product_count = aisle_data.get('product_count', 0)
                             
-                            info_str = (f"Aisle: {aisle_id} - {aisle_name}\n"
-                                       f"Impulse Index: {impulse_idx:.3f}\n"
-                                       f"Product Count: {product_count}")
+                            info_str = (f"Aisle ID: {aisle_id}\n\n"
+                                    f"Name: {aisle_name}\n\n"
+                                    f"Impulse Index: {impulse_idx:.3f}\n\n"
+                                    f"Product Count: {product_count}")
                             
                             info_text.set_text(info_str)
                         else:
                             if aisle_id == 0:
-                                info_text.set_text("Walkway")
+                                info_text.set_text("Walkway\n\nPassage area for customers")
                             elif aisle_id == -1:
-                                info_text.set_text("Exit")
+                                info_text.set_text("Exit\n\nStore exit point")
                             elif aisle_id == -2:
-                                info_text.set_text("Entrance")  
+                                info_text.set_text("Entrance\n\nStore entrance point")  
                             else:
-                                info_text.set_text(f"Aisle: {aisle_id} (No data available)")
+                                info_text.set_text(f"Aisle ID: {aisle_id}\n\nNo additional data available")
                         
                         # Highlight cells with the same aisle ID
                         if aisle_id > 0:  # Only highlight actual aisles, not walkable/entry/exit
@@ -219,7 +239,7 @@ class ResultVisualizer:
                 # Reset the grid to original state
                 highlighted_grid = grid_data.copy()
                 im.set_array(highlighted_grid)
-                ax.set_title(f"Layout - Iteration {current_grid_idx}")
+                grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
                 info_text.set_text("")
                 last_hovered_aisle = None
                 fig.canvas.draw_idle()
@@ -227,4 +247,5 @@ class ResultVisualizer:
         fig.canvas.mpl_connect("motion_notify_event", hover)
         fig.canvas.mpl_connect("axes_leave_event", on_leave)
         
+        # plt.tight_layout()
         plt.show()
