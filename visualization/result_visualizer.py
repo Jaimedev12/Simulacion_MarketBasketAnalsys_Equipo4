@@ -50,13 +50,13 @@ class ResultVisualizer:
             return
             
         # Set up the figure and axes with a side panel for information
-        fig = plt.figure(figsize=(16, 9))
+        fig = plt.figure(figsize=(16, 8))
             
         # Create a layout with grid on left and info panel on right
         cbar_ax = fig.add_subplot(1, 32, 6)  # Grid takes 1/32 of width
         grid_ax = fig.add_subplot(1, 4, (2, 3))  # Grid takes 2/4 of width
         info_ax = fig.add_subplot(1, 4, 4)       # Info panel takes 1/4 of width
-        ax_radio = plt.axes((0.1, 0.1, 0.12, 0.2))
+        ax_radio = fig.add_subplot(3, 6, 13)
         
         # Hide axes for info panel but keep border
         info_ax.set_xticks([])
