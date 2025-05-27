@@ -53,8 +53,10 @@ class ResultVisualizer:
         fig = plt.figure(figsize=(16, 9))
             
         # Create a layout with grid on left and info panel on right
-        grid_ax = fig.add_subplot(1, 4, (1, 3))  # Grid takes 3/4 of width
+        cbar_ax = fig.add_subplot(1, 32, 6)  # Grid takes 1/32 of width
+        grid_ax = fig.add_subplot(1, 4, (2, 3))  # Grid takes 2/4 of width
         info_ax = fig.add_subplot(1, 4, 4)       # Info panel takes 1/4 of width
+        ax_radio = plt.axes((0.1, 0.1, 0.12, 0.2))
         
         # Hide axes for info panel but keep border
         info_ax.set_xticks([])
@@ -64,7 +66,7 @@ class ResultVisualizer:
         info_ax.set_title("Aisle Information")
         
         # Add an empty text box in the info panel
-        info_text = info_ax.text(0.05, 0.7, "", 
+        info_text = info_ax.text(0.05, 0.6, "", 
                             verticalalignment='top', 
                             wrap=True,
                             fontsize=11)
@@ -76,7 +78,7 @@ class ResultVisualizer:
                          fontweight='bold',
                          color='navy')
         
-        plt.subplots_adjust(bottom=0.15)
+        plt.subplots_adjust(bottom=0.10)
 
         # Get unique aisle IDs for color mapping
         all_aisle_ids = np.unique(np.concatenate([m.flatten() for m in self.grid_matrices]))
@@ -179,13 +181,14 @@ class ResultVisualizer:
             valstep=1
         )
     
-        ax_radio = plt.axes((0.4, 0.03, 0.2, 0.04))
-        radio = widgets.RadioButtons(ax_radio, ('Layout', 'Heatmap'), active=0)
+        
+        radio = widgets.RadioButtons(ax_radio, ('Layout', 'Impulse Index'), active=0)
+        ax_radio.set_title("Display Mode")
 
         # Last hovered aisle for efficient updates
         last_hovered_aisle = None
 
-        cbar_ax = plt.axes((0.77, 0.3, 0.02, 0.4))
+        
         cbar = plt.colorbar(plt.cm.ScalarMappable(norm=colors.Normalize(0.0, 1.0), cmap=cmap_heatmap), 
                         cax=cbar_ax)
         cbar.set_label('Impulse Index')
