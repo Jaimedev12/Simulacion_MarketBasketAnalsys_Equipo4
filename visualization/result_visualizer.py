@@ -49,7 +49,7 @@ class ResultVisualizer:
             return
             
         # Set up the figure and axes with a side panel for information
-        fig = plt.figure(figsize=(16, 8))
+        fig = plt.figure(figsize=(16, 9))
             
         # Create a layout with grid on left and info panel on right
         grid_ax = fig.add_subplot(1, 4, (1, 3))  # Grid takes 3/4 of width
@@ -63,11 +63,20 @@ class ResultVisualizer:
         info_ax.set_title("Aisle Information")
         
         # Add an empty text box in the info panel
-        info_text = info_ax.text(0.05, 0.95, "", 
+        info_text = info_ax.text(0.05, 0.7, "", 
                             verticalalignment='top', 
                             wrap=True,
                             fontsize=11)
         
+        score_text = info_ax.text(0.05, 0.95, "", 
+                         verticalalignment='top',
+                         wrap=True,
+                         fontsize=11,
+                         fontweight='bold',
+                         color='navy')
+        
+        plt.subplots_adjust(bottom=0.15)
+
         # Get unique aisle IDs for color mapping
         all_aisle_ids = np.unique(np.concatenate([m.flatten() for m in self.grid_matrices]))
         max_aisle_id = max(all_aisle_ids)
@@ -107,14 +116,20 @@ class ResultVisualizer:
                 if cell_value != 0:  # Only label non-walkable cells
                     text = grid_ax.text(j, i, str(cell_value), ha="center", va="center", 
                             color="black", fontsize=7)
-                    text_labels.append(text)
+                    text_labels.append(text) 
         
-        # Apply tight_layout for the main content
-        # plt.tight_layout()
+        # Function to update score information
+        def update_score_info(idx):
+            iteration = self.iterations[idx]
+            score_info = (f"Score Information:\n\n"
+                        f"Total Score: {iteration.score.total_score:.2f}\n\n"
+                        f"Adjusted Purchases: {iteration.score.adjusted_purchases:.2f}\n\n"
+                        f"Adjusted Steps: {iteration.score.adjusted_steps:.2f}")
+            score_text.set_text(score_info)
+        
+        # Update initial score info
+        update_score_info(current_grid_idx)
 
-        # First set bottom margin to leave room for the slider
-        plt.subplots_adjust(bottom=0.15)  # Increase this value to leave more space
-        
         # AFTER tight_layout(), create the slider axes at the bottom
         ax_slider = plt.axes((0.2, 0.05, 0.6, 0.03))
         slider = widgets.Slider(
@@ -126,7 +141,6 @@ class ResultVisualizer:
             valstep=1
         )
     
-        
         # Last hovered aisle for efficient updates
         last_hovered_aisle = None
         
@@ -147,8 +161,11 @@ class ResultVisualizer:
             # Update the image data directly - much faster than clearing and redrawing
             im.set_array(highlighted_grid)
             
-            # Clear info text
+            # Clear aisle info text
             info_text.set_text("")
+            
+            # Update score information
+            update_score_info(current_grid_idx)
             
             # Update title
             grid_ax.set_title(f"Layout - Iteration {current_grid_idx}")
@@ -167,7 +184,6 @@ class ResultVisualizer:
                         text_labels.append(text)
             
             fig.canvas.draw_idle()
-        
         slider.on_changed(update)
         
         # Add a highlight feature on mouse hover
