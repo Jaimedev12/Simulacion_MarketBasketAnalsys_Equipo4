@@ -43,6 +43,19 @@ class ResultVisualizer:
                     
             self.grid_matrices.append(matrix)
     
+    def print_stats(self):
+        """Display statistics for each iteration"""
+        if not self.iterations:
+            print("No iterations to display.")
+            return
+        
+        best_iteration = self.iterations[-1]
+
+        print("  Num Iterations:", len(self.iterations))
+        print(f"  Total Score: {best_iteration.score.total_score:.2f}")
+        print(f"  Adjusted Purchases: {best_iteration.score.adjusted_purchases:.2f}")
+        print(f"  Adjusted Steps: {best_iteration.score.adjusted_steps:.2f}")
+
     def visualize(self):
         """Display the grid with a slider for iteration navigation"""
         if not self.iterations or not self.grid_matrices:
