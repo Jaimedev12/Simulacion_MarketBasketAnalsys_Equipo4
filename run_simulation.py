@@ -1,6 +1,7 @@
 # from optimization.tabu_search import TabuSearchOptimizer
 from dataclasses import dataclass
 from os import name
+from re import S
 from utils.helpers import load_shopping_lists
 import config as cfg
 from core.customer import CustomerSimulator
@@ -22,6 +23,7 @@ class SimulationConfig:
     tries_allowed: int = cfg.TABU_TRIES_ALLOWED
     swap_walkable: bool = True
     swap_amount: int = 5
+    swap_whole_aisles: bool = False
 
 def gen_simulations()-> List[SimulationConfig]:
     ideal_layout = gen_example_layout()
@@ -33,7 +35,7 @@ def gen_simulations()-> List[SimulationConfig]:
         # SimulationConfig(layout=ordered_grid, name="ordered_layout"),
         # SimulationConfig(layout=random_grid, name="random_layout"),
         # SimulationConfig(layout=balanced_grid, name="balanced_layout"),
-        SimulationConfig(layout=ideal_layout, name="ideal_layout", swap_walkable=False),
+        SimulationConfig(layout=ideal_layout, name="ideal_layout", swap_walkable=False, swap_whole_aisles=True, swap_amount=1),
     ]
 
     # for i in range(1, 5):
@@ -66,7 +68,8 @@ def main():
         print(f"Running simulation for {sim_config.name}")
         search_optimizer.change_curr_grid(sim_config.layout, True, True)
         search_optimizer.optimize(iterations=sim_config.tabu_iterations, tabu_size=sim_config.tabu_size,
-                                  tries_allowed=sim_config.tries_allowed, swap_amount=sim_config.swap_amount, swap_walkable_cells=sim_config.swap_walkable)
+                                  tries_allowed=sim_config.tries_allowed, swap_amount=sim_config.swap_amount, 
+                                  swap_walkable_cells=sim_config.swap_walkable, swap_whole_aisles=sim_config.swap_whole_aisles)
 
         interpreter.update_iterations(search_optimizer.iterations)
         interpreter.store(filename=f"{sim_config.name}.npz")
