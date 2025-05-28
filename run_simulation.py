@@ -1,4 +1,5 @@
 # from optimization.tabu_search import TabuSearchOptimizer
+from copy import deepcopy
 from dataclasses import dataclass
 from os import name
 from re import S
@@ -32,22 +33,24 @@ def gen_simulations()-> List[SimulationConfig]:
     balanced_grid = get_grid_object(0.5)
     
     sims: List[SimulationConfig] = [
+        # ---------------- Efrain ----------------
         # SimulationConfig(layout=ordered_grid, name="ordered_layout"),
         # SimulationConfig(layout=random_grid, name="random_layout"),
         # SimulationConfig(layout=balanced_grid, name="balanced_layout"),
-        SimulationConfig(layout=ideal_layout, name="ideal_layout", swap_walkable=False, swap_whole_aisles=True, swap_amount=1),
+
+        # ---------------- Christopher ----------------
+        # SimulationConfig(layout=ideal_layout, name="ideal_layout", swap_walkable=False, swap_whole_aisles=True, swap_amount=1),
     ]
 
-    # for i in range(1, 5):
-    #     balanced_grid_alt = get_grid_object(0.5)
-    #     sims.append(SimulationConfig(layout=balanced_grid_alt, name=f"swap_amount_{i*3}", swap_amount=i*3))
+    # ---------------- Jaime ----------------
+    for i in range(1, 11, 2):
+        balanced_grid_copy = deepcopy(balanced_grid)
+        sims.append(SimulationConfig(layout=balanced_grid_copy, name=f"swap_amount_{i}", swap_amount=i))
 
     return sims
 
 
 def main():
-    # Cargar datos
-    # ordered_grid = SupermarketGrid.from_file(cfg.LAYOUT_FILE, cfg.AISLE_INFO_FILE)
     sim_configs = gen_simulations()
 
     # plot_grid(sim_configs[0].layout)
