@@ -10,6 +10,7 @@ import random
 from optimization.tabu_search import TabuSearchOptimizer
 from optimization.result_interpreter import ResultInterpreter
 from utils.gen_example_layout import gen_example_layout
+from utils.visualization import plot_grid
 from core.grid import SupermarketGrid
 
 @dataclass
@@ -46,6 +47,8 @@ def main():
     # Cargar datos
     # ordered_grid = SupermarketGrid.from_file(cfg.LAYOUT_FILE, cfg.AISLE_INFO_FILE)
     sim_configs = gen_simulations()
+
+    # plot_grid(sim_configs[0].layout)
     
     shopping_lists = load_shopping_lists(cfg.SHOPPING_LISTS_FILE)
 
