@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import json
 import networkx as nx
 from typing import List, Dict, Tuple, Optional, Any, TypedDict
+import config as cfg
 
 # Define the structure of each aisle info entry
 @dataclass
@@ -16,7 +17,8 @@ class CellInfo():
     is_walkable: bool  # True si es un pasillo, False si es un estante
     aisle_id: int  # Puede ser None si no es un pasillo
     product_id_range: Tuple[int, int]
-    is_exit: bool
+    is_exit: bool = False
+    is_entrance: bool = False
 
 @dataclass
 class GridInput():
@@ -32,7 +34,7 @@ class SupermarketGrid:
         self.cols: int = cols
         self.grid: List[List[CellInfo]] = [
                 [
-                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0), is_exit=False) 
+                    CellInfo(is_walkable=True, aisle_id=0, product_id_range=(0, 0)) 
                     for _ in range(cols)
                 ] for _ in range(rows)
             ]
@@ -64,7 +66,7 @@ class SupermarketGrid:
             return aisle_info
 
     @classmethod
-    def from_dict(cls, layout_data: GridInput, aisle_info_filename: str) -> 'SupermarketGrid':
+    def from_dict(cls, layout_data: GridInput, aisle_info_file: str = cfg.AISLE_INFO_FILE) -> 'SupermarketGrid':
         """
         Crea una instancia de SupermarketGrid a partir de un diccionario.
         
@@ -79,7 +81,7 @@ class SupermarketGrid:
         grid: 'SupermarketGrid' = cls(layout_data.rows, layout_data.cols)
         
         # Cargar información de pasillos desde el archivo de impulso
-        aisle_info = cls.read_aisle_info(aisle_info_filename)
+        aisle_info = cls.read_aisle_info(aisle_info_file)
         grid.aisle_info = aisle_info
         
         # Procesar el grid
@@ -87,7 +89,7 @@ class SupermarketGrid:
             for col in range(grid.cols):
                 aisle_id: int = layout_data.grid[row][col]
                 
-                grid.grid[row][col].is_walkable = (aisle_id == 0)  # True si es un pasillo o entrada/salida
+                grid.grid[row][col].is_walkable = (aisle_id <= 0)  # True si es un pasillo o entrada/salida
                 grid.grid[row][col].aisle_id = aisle_id
 
                 # Procesar basado en el tipo de celda
@@ -99,6 +101,7 @@ class SupermarketGrid:
         grid.entrance = layout_data.entrance
         grid.exit = layout_data.exit
         grid.grid[grid.exit[0]][grid.exit[1]].is_exit = True
+        grid.grid[grid.entrance[0]][grid.entrance[1]].is_entrance = True
         
         # Verificar conectividad
         # if not grid.is_connected():
@@ -150,8 +153,7 @@ class SupermarketGrid:
         """Verifica que exista un camino entre entrada y salida"""
         if not self.entrance or not self.exit:
             return False
-        G = self._build_graph()
-        return nx.has_path(G, self.entrance, self.exit)
+        return nx.has_path(self.graph, self.entrance, self.exit)
 
     def _build_graph(self) -> nx.Graph:
         """
@@ -189,7 +191,11 @@ class SupermarketGrid:
 
     def get_path(self, start: Tuple[int, int], end: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
         """Calcula la ruta óptima con NetworkX"""
-        G = self._build_graph()
+        G = self.graph
+
+        if start not in G or end not in G:
+            return None
+
         try:
             return list(nx.shortest_path(G, start, end))
         except nx.NetworkXNoPath:

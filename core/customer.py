@@ -1,5 +1,6 @@
 from collections import deque
 from dataclasses import dataclass
+from os import path
 import random
 from copy import deepcopy
 from typing import List, Any, Tuple, Set, Optional, Dict
@@ -11,6 +12,27 @@ import networkx as nx
 class SimulationResult:
     impulsive_purchases: int
     path: List[Tuple[int, int]] # Coords
+    impulsive_shelfs: List[Tuple[int, int]] # Coords
+
+@dataclass
+class GetPathResult:
+    """Result of finding the closest pending shelf path.
+    
+    Attributes:
+        closest_shelf_pos: Position of the closest shelf.
+        path_to_shelf: Path from start to the shelf.
+        impulsive_purchases: Count of impulsive buys along the path.
+        impulsive_shelfs: List of shelves where impulsive buys were made.
+    """
+    closest_shelf_pos: Tuple[int, int]
+    path_to_shelf: List[Tuple[int, int]]
+    impulsive_purchases: int
+
+@dataclass
+class TargetShelf:
+    shelf_pos: Tuple[int, int]
+    adj_walkable_pos: Tuple[int, int]
+
 
 class CustomerSimulator:
     def __init__(self, shopping_list: List[int]) -> None:
@@ -55,13 +77,9 @@ class CustomerSimulator:
                            grid: SupermarketGrid, 
                            visited_shelves: Set[Tuple[int, int]],
                            find_exit: bool = False
-                           ) -> Optional[Tuple[Tuple[int, int], Tuple[int, int]]]:
-        """
-        Returns:
-        (closest_shelf_pos, contiguous_walkable_pos)
-        """
+                           ) -> TargetShelf:
         if start_pos not in grid.graph:
-            return None
+            raise Exception("La posición inicial no es válida.")
         
         # BFS setup
         queue = deque([start_pos])
@@ -84,15 +102,15 @@ class CustomerSimulator:
                     
                 shelf_info = grid.grid[shelf[0]][shelf[1]]
                 if shelf_info.is_exit and find_exit:
-                    return (shelf, shelf)
+                    return TargetShelf(shelf, shelf)
                 if shelf_info.aisle_id in pending_cell_ids:
-                    return (shelf, current)
+                    return TargetShelf(shelf, current)
 
             for neighbor in grid.graph.neighbors(current):
                 if neighbor not in visited:
                     queue.append(neighbor)
 
-        return None
+        raise Exception("No se encontró un pasillo contiguo a la posición inicial.")
 
     def get_path_to_closest_pending(
             self, 
@@ -102,10 +120,14 @@ class CustomerSimulator:
             visited_shelves: Set[Tuple[int, int]],
             shelfs_with_impulsive_buys: Set[Tuple[int, int]],
             go_to_exit: bool = False
-            ) -> Tuple[Tuple[int, int], List[Tuple[int, int]], int]:
+            ) -> GetPathResult:
         """
         Returns:
-        (closest_shelf_pos, path_to_shelf, impulsive_purchases)
+            GetPathResult object containing:
+                - closest_shelf_pos: Position of the closest shelf
+                - path_to_shelf: Path from start to the shelf
+                - impulsive_purchases: Number of impulsive buys along the path
+                - impulsive_shelfs: List of shelves where impulsive buys were made
         """
         
         result = self.find_closest_from_set(
@@ -116,11 +138,8 @@ class CustomerSimulator:
             find_exit=go_to_exit
             )
         
-        closest_shelf, target_pos = result if result is not None else (None, None)
+        closest_shelf, target_pos = result.shelf_pos, result.adj_walkable_pos
         
-        if closest_shelf is None or target_pos is None:
-            raise Exception("No se puede llegar a ningún pasillo de la lista de compras.")
-
         impulsive_purchases = 0
         current_path = grid.get_path(start_pos, target_pos)
         if current_path is None:
@@ -136,7 +155,11 @@ class CustomerSimulator:
                         impulsive_purchases += 1
                         shelfs_with_impulsive_buys.add(shelf)
         
-        return (closest_shelf, current_path, impulsive_purchases)
+        return GetPathResult(
+            closest_shelf, 
+            current_path, 
+            impulsive_purchases,
+            )
 
     def simulate(self, grid: SupermarketGrid) -> SimulationResult:
         impulsive_purchases = 0
@@ -159,7 +182,11 @@ class CustomerSimulator:
                 shelves_already_bought,
                 go_to_exit=(len(remaining_ailes) == 0)
                 )
-            closest, path_to_shelf, impulsive_purchases_in_path = result if result is not None else (None, [], 0)
+            
+            closest = result.closest_shelf_pos
+            path_to_shelf = result.path_to_shelf
+            impulsive_purchases_in_path = result.impulsive_purchases
+
             path_taken.extend(path_to_shelf[1:])  # Add the path to the shelf
             impulsive_purchases += impulsive_purchases_in_path
 
@@ -190,5 +217,6 @@ class CustomerSimulator:
     
         return SimulationResult(
             impulsive_purchases=impulsive_purchases,
-            path=path_taken
+            path=path_taken,
+            impulsive_shelfs=list(shelves_already_bought)
         )
