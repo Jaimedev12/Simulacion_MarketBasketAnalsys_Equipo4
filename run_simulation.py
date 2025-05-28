@@ -34,9 +34,9 @@ def gen_simulations()-> List[SimulationConfig]:
     
     sims: List[SimulationConfig] = [
         # ---------------- Efrain ----------------
-        # SimulationConfig(layout=ordered_grid, name="ordered_layout"),
-        # SimulationConfig(layout=random_grid, name="random_layout"),
-        # SimulationConfig(layout=balanced_grid, name="balanced_layout"),
+        SimulationConfig(layout=ordered_grid, name="ordered_layout"),
+        SimulationConfig(layout=random_grid, name="random_layout"),
+        SimulationConfig(layout=balanced_grid, name="balanced_layout"),
 
         # ---------------- Christopher ----------------
         # SimulationConfig(layout=ideal_layout, name="ideal_layout", swap_walkable=False, swap_whole_aisles=True, swap_amount=1),
