@@ -167,13 +167,13 @@ class TabuSearchOptimizer:
                 )
         )
 
-    def _get_best_neighbor(self, tries_allowed: int = 5, swap_walkable_cells: bool = False) -> Neighbor:
+    def _get_best_neighbor(self, tries_allowed: int = 5, swap_walkable_cells: bool = False, swap_amount: int = 5) -> Neighbor:
         while tries_allowed > 0:
             tries_allowed -= 1
             neighbors = gen_neighbors(
                 self.current_solution, 
                 n=30, 
-                swap_amount=5, 
+                swap_amount=swap_amount, 
                 swap_walkable_cells=swap_walkable_cells
                 )
             
@@ -222,12 +222,14 @@ class TabuSearchOptimizer:
             tabu_size: int = 10, 
             tries_allowed: int = 5,
             swap_walkable_cells: bool = True,
+            swap_amount: int = 5
             ) -> Tuple[SupermarketGrid, TabuSearchScore]:
         for cur_iter in range(iterations):
 
             best_neighbor = self._get_best_neighbor(
                 tries_allowed=tries_allowed,
-                swap_walkable_cells=swap_walkable_cells
+                swap_walkable_cells=swap_walkable_cells,
+                swap_amount=swap_amount
                 )
 
             if not best_neighbor.is_worth_exploring:

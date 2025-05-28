@@ -89,7 +89,7 @@ class SupermarketGrid:
             for col in range(grid.cols):
                 aisle_id: int = layout_data.grid[row][col]
                 
-                grid.grid[row][col].is_walkable = (aisle_id == 0)  # True si es un pasillo o entrada/salida
+                grid.grid[row][col].is_walkable = (aisle_id <= 0)  # True si es un pasillo o entrada/salida
                 grid.grid[row][col].aisle_id = aisle_id
 
                 # Procesar basado en el tipo de celda

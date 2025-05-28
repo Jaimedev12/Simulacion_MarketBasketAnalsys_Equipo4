@@ -100,9 +100,9 @@ class ResultInterpreter:
 
         return new_grid
 
-    def read_results(self, filename: str = "optimization/results/results.npz") -> List[Iteration]:
+    def read_results(self, file_path: str = "optimization/results/", filename: str = "results.npz") -> List[Iteration]:
         # Load the results from the .npz file
-        data = np.load(filename)
+        data = np.load(os.path.join(file_path, filename))
         grids = data['grids']
         scores = data['scores']
         it_seq = data['it_seq']

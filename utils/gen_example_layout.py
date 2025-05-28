@@ -1,14 +1,11 @@
 import json
 import numpy as np
-import sys
-import os
-# Add the parent directory to the path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from core.grid import SupermarketGrid, GridInput
 import config as cfg
 
-def main():
+def gen_example_layout() -> SupermarketGrid:
     # Load aisle data
-    with open("../" + cfg.AISLE_INFO_FILE, 'r') as file:
+    with open(cfg.AISLE_INFO_FILE, 'r') as file:
         aisles_data = json.load(file)
     
     # Determine dimensions for a realistic supermarket layout
@@ -54,28 +51,15 @@ def main():
                 grid[r+1][c+1] = aisle_id
                 grid[r+1][c+2] = aisle_id
                 current_aisle_idx += 1
-    
-    # Save the grid to a file
-    output_path = "../data/example_layout.json"
-    with open(output_path, 'w') as file:
-        json.dump({
-            "rows": rows,
-            "cols": cols,
-            "grid": grid.tolist(),
-            "entrance": [0, 5],
-            "exit": [0, 25]
-        }, file, indent=4)
-    
-    print(f"Example supermarket layout created and saved to {output_path}")
-    
-    # Save the grid visualization to a file
-    viz_path = "../data/layout_visualization.txt"
-    with open(viz_path, 'w') as viz_file:
-        viz_file.write("Layout visualization (numbers = aisle IDs, 0 = walkable space):\n\n")
-        for row in grid:
-            viz_file.write(" ".join(f"{cell:3d}" for cell in row) + "\n")
-    
-    print(f"Visualization saved to {viz_path}")
 
-if __name__ == "__main__":
-    main()
+    grid_input = GridInput(
+        rows=rows,
+        cols=cols,
+        grid=grid.tolist(),
+        entrance=(0, 5),
+        exit=(0, 25)
+    )
+
+    super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
+    
+    return super_grid
