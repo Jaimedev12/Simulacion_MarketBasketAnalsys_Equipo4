@@ -1,0 +1,667 @@
+{
+    "1": {
+        "impulse_index": 0.053517498537084374,
+        "product_count": 146,
+        "aisle_name": "prepared soups salads"
+    },
+    "2": {
+        "impulse_index": 0.06330414710659907,
+        "product_count": 271,
+        "aisle_name": "specialty cheeses"
+    },
+    "3": {
+        "impulse_index": 0.050446092729276734,
+        "product_count": 832,
+        "aisle_name": "energy granola bars"
+    },
+    "4": {
+        "impulse_index": 0.06452598437904827,
+        "product_count": 543,
+        "aisle_name": "instant foods"
+    },
+    "5": {
+        "impulse_index": 0.07616585378647298,
+        "product_count": 409,
+        "aisle_name": "marinades meat preparation"
+    },
+    "6": {
+        "impulse_index": 0.07589961880802865,
+        "product_count": 548,
+        "aisle_name": "other"
+    },
+    "7": {
+        "impulse_index": 0.06051408775609747,
+        "product_count": 100,
+        "aisle_name": "packaged meat"
+    },
+    "8": {
+        "impulse_index": 0.0640819431712045,
+        "product_count": 297,
+        "aisle_name": "bakery desserts"
+    },
+    "9": {
+        "impulse_index": 0.06211377719301901,
+        "product_count": 399,
+        "aisle_name": "pasta sauce"
+    },
+    "10": {
+        "impulse_index": 0.09180395383788523,
+        "product_count": 218,
+        "aisle_name": "kitchen supplies"
+    },
+    "11": {
+        "impulse_index": 0.0820977455109871,
+        "product_count": 427,
+        "aisle_name": "cold flu allergy"
+    },
+    "12": {
+        "impulse_index": 0.058032595922068254,
+        "product_count": 123,
+        "aisle_name": "fresh pasta"
+    },
+    "13": {
+        "impulse_index": 0.053960126821753995,
+        "product_count": 317,
+        "aisle_name": "prepared meals"
+    },
+    "14": {
+        "impulse_index": 0.05102206939854985,
+        "product_count": 159,
+        "aisle_name": "tofu meat alternatives"
+    },
+    "15": {
+        "impulse_index": 0.062271339802336304,
+        "product_count": 80,
+        "aisle_name": "packaged seafood"
+    },
+    "16": {
+        "impulse_index": 0.07213042420666763,
+        "product_count": 86,
+        "aisle_name": "fresh herbs"
+    },
+    "17": {
+        "impulse_index": 0.07677621644550398,
+        "product_count": 623,
+        "aisle_name": "baking ingredients"
+    },
+    "18": {
+        "impulse_index": 0.057027471034540776,
+        "product_count": 12,
+        "aisle_name": "bulk dried fruits vegetables"
+    },
+    "19": {
+        "impulse_index": 0.07548566463792589,
+        "product_count": 375,
+        "aisle_name": "oils vinegars"
+    },
+    "20": {
+        "impulse_index": 0.07383166180541693,
+        "product_count": 565,
+        "aisle_name": "oral hygiene"
+    },
+    "21": {
+        "impulse_index": 0.056663505677686556,
+        "product_count": 891,
+        "aisle_name": "packaged cheese"
+    },
+    "22": {
+        "impulse_index": 0.07967007921274902,
+        "product_count": 816,
+        "aisle_name": "hair care"
+    },
+    "23": {
+        "impulse_index": 0.056650764087156566,
+        "product_count": 316,
+        "aisle_name": "popcorn jerky"
+    },
+    "24": {
+        "impulse_index": 0.05828754040438431,
+        "product_count": 382,
+        "aisle_name": "fresh fruits"
+    },
+    "25": {
+        "impulse_index": 0.07725082708369363,
+        "product_count": 525,
+        "aisle_name": "soap"
+    },
+    "26": {
+        "impulse_index": 0.051732912591955615,
+        "product_count": 680,
+        "aisle_name": "coffee"
+    },
+    "27": {
+        "impulse_index": 0.05982641032827275,
+        "product_count": 385,
+        "aisle_name": "beers coolers"
+    },
+    "28": {
+        "impulse_index": 0.058125180224351314,
+        "product_count": 232,
+        "aisle_name": "red wines"
+    },
+    "29": {
+        "impulse_index": 0.07051690585609885,
+        "product_count": 229,
+        "aisle_name": "honeys syrups nectars"
+    },
+    "30": {
+        "impulse_index": 0.07170395025171902,
+        "product_count": 257,
+        "aisle_name": "latino foods"
+    },
+    "31": {
+        "impulse_index": 0.04678050337113574,
+        "product_count": 675,
+        "aisle_name": "refrigerated"
+    },
+    "32": {
+        "impulse_index": 0.04213177762817192,
+        "product_count": 32,
+        "aisle_name": "packaged produce"
+    },
+    "33": {
+        "impulse_index": 0.07067418819725155,
+        "product_count": 169,
+        "aisle_name": "kosher foods"
+    },
+    "34": {
+        "impulse_index": 0.06220581988340006,
+        "product_count": 229,
+        "aisle_name": "frozen meat seafood"
+    },
+    "35": {
+        "impulse_index": 0.05925720283141135,
+        "product_count": 82,
+        "aisle_name": "poultry counter"
+    },
+    "36": {
+        "impulse_index": 0.0543439680480188,
+        "product_count": 150,
+        "aisle_name": "butter"
+    },
+    "37": {
+        "impulse_index": 0.05926787575381026,
+        "product_count": 1091,
+        "aisle_name": "ice cream ice"
+    },
+    "38": {
+        "impulse_index": 0.05544355222575027,
+        "product_count": 880,
+        "aisle_name": "frozen meals"
+    },
+    "39": {
+        "impulse_index": 0.06566475481693558,
+        "product_count": 54,
+        "aisle_name": "seafood counter"
+    },
+    "40": {
+        "impulse_index": 0.0534939721538538,
+        "product_count": 473,
+        "aisle_name": "dog food care"
+    },
+    "41": {
+        "impulse_index": 0.04768837983326392,
+        "product_count": 499,
+        "aisle_name": "cat food care"
+    },
+    "42": {
+        "impulse_index": 0.05581241638716555,
+        "product_count": 189,
+        "aisle_name": "frozen vegan vegetarian"
+    },
+    "43": {
+        "impulse_index": 0.060710204822373416,
+        "product_count": 195,
+        "aisle_name": "buns rolls"
+    },
+    "44": {
+        "impulse_index": 0.0772716398607791,
+        "product_count": 113,
+        "aisle_name": "eye ear care"
+    },
+    "45": {
+        "impulse_index": 0.05841056186782455,
+        "product_count": 1246,
+        "aisle_name": "candy chocolate"
+    },
+    "46": {
+        "impulse_index": 0.04923325398301955,
+        "product_count": 168,
+        "aisle_name": "mint gum"
+    },
+    "47": {
+        "impulse_index": 0.07902475905352661,
+        "product_count": 1038,
+        "aisle_name": "vitamins supplements"
+    },
+    "48": {
+        "impulse_index": 0.05031355782788131,
+        "product_count": 173,
+        "aisle_name": "breakfast bars pastries"
+    },
+    "49": {
+        "impulse_index": 0.05782558521032033,
+        "product_count": 99,
+        "aisle_name": "packaged poultry"
+    },
+    "50": {
+        "impulse_index": 0.05562972961120447,
+        "product_count": 356,
+        "aisle_name": "fruit vegetable snacks"
+    },
+    "51": {
+        "impulse_index": 0.06471206266015718,
+        "product_count": 264,
+        "aisle_name": "preserved dips spreads"
+    },
+    "52": {
+        "impulse_index": 0.04865429480717876,
+        "product_count": 296,
+        "aisle_name": "frozen breakfast"
+    },
+    "53": {
+        "impulse_index": 0.0493949894290723,
+        "product_count": 161,
+        "aisle_name": "cream"
+    },
+    "54": {
+        "impulse_index": 0.055650967867584424,
+        "product_count": 322,
+        "aisle_name": "paper goods"
+    },
+    "55": {
+        "impulse_index": 0.07823268144195666,
+        "product_count": 198,
+        "aisle_name": "shave needs"
+    },
+    "56": {
+        "impulse_index": 0.06126183716456028,
+        "product_count": 187,
+        "aisle_name": "diapers wipes"
+    },
+    "57": {
+        "impulse_index": 0.049952188269716244,
+        "product_count": 185,
+        "aisle_name": "granola"
+    },
+    "58": {
+        "impulse_index": 0.05943743122417362,
+        "product_count": 81,
+        "aisle_name": "frozen breads doughs"
+    },
+    "59": {
+        "impulse_index": 0.06091893391904185,
+        "product_count": 342,
+        "aisle_name": "canned meals beans"
+    },
+    "60": {
+        "impulse_index": 0.07618968042359905,
+        "product_count": 112,
+        "aisle_name": "trash bags liners"
+    },
+    "61": {
+        "impulse_index": 0.05843834051482829,
+        "product_count": 874,
+        "aisle_name": "cookies cakes"
+    },
+    "62": {
+        "impulse_index": 0.055940281402600364,
+        "product_count": 147,
+        "aisle_name": "white wines"
+    },
+    "63": {
+        "impulse_index": 0.07173436115078478,
+        "product_count": 336,
+        "aisle_name": "grains rice dried goods"
+    },
+    "64": {
+        "impulse_index": 0.042906304727795816,
+        "product_count": 294,
+        "aisle_name": "energy sports drinks"
+    },
+    "65": {
+        "impulse_index": 0.062048011106851694,
+        "product_count": 325,
+        "aisle_name": "protein meal replacements"
+    },
+    "66": {
+        "impulse_index": 0.07228097555103971,
+        "product_count": 605,
+        "aisle_name": "asian foods"
+    },
+    "67": {
+        "impulse_index": 0.056923699965188014,
+        "product_count": 327,
+        "aisle_name": "fresh dips tapenades"
+    },
+    "68": {
+        "impulse_index": 0.059345607595135616,
+        "product_count": 26,
+        "aisle_name": "bulk grains rice dried goods"
+    },
+    "69": {
+        "impulse_index": 0.0671425472013362,
+        "product_count": 737,
+        "aisle_name": "soup broth bouillon"
+    },
+    "70": {
+        "impulse_index": 0.06987910708572287,
+        "product_count": 338,
+        "aisle_name": "digestion"
+    },
+    "71": {
+        "impulse_index": 0.056478842135658035,
+        "product_count": 98,
+        "aisle_name": "refrigerated pudding desserts"
+    },
+    "72": {
+        "impulse_index": 0.07619636549979798,
+        "product_count": 466,
+        "aisle_name": "condiments"
+    },
+    "73": {
+        "impulse_index": 0.07817318078743692,
+        "product_count": 277,
+        "aisle_name": "facial care"
+    },
+    "74": {
+        "impulse_index": 0.06857760053862104,
+        "product_count": 204,
+        "aisle_name": "dish detergents"
+    },
+    "75": {
+        "impulse_index": 0.06753779594421763,
+        "product_count": 506,
+        "aisle_name": "laundry"
+    },
+    "76": {
+        "impulse_index": 0.0676940959774308,
+        "product_count": 108,
+        "aisle_name": "indian foods"
+    },
+    "77": {
+        "impulse_index": 0.05122589047917636,
+        "product_count": 463,
+        "aisle_name": "soft drinks"
+    },
+    "78": {
+        "impulse_index": 0.0550028847344899,
+        "product_count": 747,
+        "aisle_name": "crackers"
+    },
+    "79": {
+        "impulse_index": 0.054717253733291615,
+        "product_count": 335,
+        "aisle_name": "frozen pizza"
+    },
+    "80": {
+        "impulse_index": 0.07808138264299373,
+        "product_count": 317,
+        "aisle_name": "deodorants"
+    },
+    "81": {
+        "impulse_index": 0.0678213876448473,
+        "product_count": 487,
+        "aisle_name": "canned jarred vegetables"
+    },
+    "82": {
+        "impulse_index": 0.08103034398138223,
+        "product_count": 44,
+        "aisle_name": "baby accessories"
+    },
+    "83": {
+        "impulse_index": 0.06033370146315551,
+        "product_count": 569,
+        "aisle_name": "fresh vegetables"
+    },
+    "84": {
+        "impulse_index": 0.038831059645894145,
+        "product_count": 243,
+        "aisle_name": "milk"
+    },
+    "85": {
+        "impulse_index": 0.08257748319442,
+        "product_count": 206,
+        "aisle_name": "food storage"
+    },
+    "86": {
+        "impulse_index": 0.03777116045771741,
+        "product_count": 125,
+        "aisle_name": "eggs"
+    },
+    "87": {
+        "impulse_index": 0.08514448392535362,
+        "product_count": 308,
+        "aisle_name": "more household"
+    },
+    "88": {
+        "impulse_index": 0.06420600583441963,
+        "product_count": 493,
+        "aisle_name": "spreads"
+    },
+    "89": {
+        "impulse_index": 0.0717099972069919,
+        "product_count": 560,
+        "aisle_name": "salad dressing toppings"
+    },
+    "90": {
+        "impulse_index": 0.06418358121654914,
+        "product_count": 223,
+        "aisle_name": "cocoa drink mixes"
+    },
+    "91": {
+        "impulse_index": 0.04338226205966427,
+        "product_count": 293,
+        "aisle_name": "soy lactosefree"
+    },
+    "92": {
+        "impulse_index": 0.052423104505792885,
+        "product_count": 718,
+        "aisle_name": "baby food formula"
+    },
+    "93": {
+        "impulse_index": 0.046952143048823516,
+        "product_count": 226,
+        "aisle_name": "breakfast bakery"
+    },
+    "94": {
+        "impulse_index": 0.06275712568117972,
+        "product_count": 894,
+        "aisle_name": "tea"
+    },
+    "95": {
+        "impulse_index": 0.05893340694539353,
+        "product_count": 283,
+        "aisle_name": "canned meat seafood"
+    },
+    "96": {
+        "impulse_index": 0.0536428253152013,
+        "product_count": 373,
+        "aisle_name": "lunch meat"
+    },
+    "97": {
+        "impulse_index": 0.0904757152430944,
+        "product_count": 290,
+        "aisle_name": "baking supplies decor"
+    },
+    "98": {
+        "impulse_index": 0.05351054009756322,
+        "product_count": 792,
+        "aisle_name": "juice nectars"
+    },
+    "99": {
+        "impulse_index": 0.05975315493884921,
+        "product_count": 243,
+        "aisle_name": "canned fruit applesauce"
+    },
+    "101": {
+        "impulse_index": 0.07633372249326084,
+        "product_count": 355,
+        "aisle_name": "air fresheners candles"
+    },
+    "102": {
+        "impulse_index": 0.07861723312922633,
+        "product_count": 132,
+        "aisle_name": "baby bath body care"
+    },
+    "103": {
+        "impulse_index": 0.08163198117991582,
+        "product_count": 85,
+        "aisle_name": "ice cream toppings"
+    },
+    "104": {
+        "impulse_index": 0.08831403933745649,
+        "product_count": 797,
+        "aisle_name": "spices seasonings"
+    },
+    "105": {
+        "impulse_index": 0.07527643913437848,
+        "product_count": 463,
+        "aisle_name": "doughs gelatins bake mixes"
+    },
+    "106": {
+        "impulse_index": 0.05682254683078917,
+        "product_count": 387,
+        "aisle_name": "hot dogs bacon sausage"
+    },
+    "107": {
+        "impulse_index": 0.05231560330016603,
+        "product_count": 989,
+        "aisle_name": "chips pretzels"
+    },
+    "108": {
+        "impulse_index": 0.05025565901758119,
+        "product_count": 191,
+        "aisle_name": "other creams cheeses"
+    },
+    "109": {
+        "impulse_index": 0.08297704826963728,
+        "product_count": 245,
+        "aisle_name": "skin care"
+    },
+    "110": {
+        "impulse_index": 0.06567605819332588,
+        "product_count": 402,
+        "aisle_name": "pickled goods olives"
+    },
+    "111": {
+        "impulse_index": 0.06887632410508457,
+        "product_count": 199,
+        "aisle_name": "plates bowls cups flatware"
+    },
+    "112": {
+        "impulse_index": 0.04521292553054312,
+        "product_count": 557,
+        "aisle_name": "bread"
+    },
+    "113": {
+        "impulse_index": 0.06296532025087638,
+        "product_count": 47,
+        "aisle_name": "frozen juice"
+    },
+    "114": {
+        "impulse_index": 0.07935429001659638,
+        "product_count": 655,
+        "aisle_name": "cleaning products"
+    },
+    "115": {
+        "impulse_index": 0.04147284292741434,
+        "product_count": 344,
+        "aisle_name": "water seltzer sparkling water"
+    },
+    "116": {
+        "impulse_index": 0.06084016775891373,
+        "product_count": 361,
+        "aisle_name": "frozen produce"
+    },
+    "117": {
+        "impulse_index": 0.060420926882078896,
+        "product_count": 582,
+        "aisle_name": "nuts seeds dried fruit"
+    },
+    "118": {
+        "impulse_index": 0.08415135045830927,
+        "product_count": 240,
+        "aisle_name": "first aid"
+    },
+    "119": {
+        "impulse_index": 0.06938183181730852,
+        "product_count": 112,
+        "aisle_name": "frozen dessert"
+    },
+    "120": {
+        "impulse_index": 0.043147935560605595,
+        "product_count": 1026,
+        "aisle_name": "yogurt"
+    },
+    "121": {
+        "impulse_index": 0.050831974518471455,
+        "product_count": 454,
+        "aisle_name": "cereal"
+    },
+    "122": {
+        "impulse_index": 0.06386223715416132,
+        "product_count": 105,
+        "aisle_name": "meat counter"
+    },
+    "123": {
+        "impulse_index": 0.05616726184938402,
+        "product_count": 615,
+        "aisle_name": "packaged vegetables fruits"
+    },
+    "124": {
+        "impulse_index": 0.06087818583575662,
+        "product_count": 195,
+        "aisle_name": "spirits"
+    },
+    "125": {
+        "impulse_index": 0.05680123746011011,
+        "product_count": 69,
+        "aisle_name": "trail mix snack mix"
+    },
+    "126": {
+        "impulse_index": 0.07305771591760837,
+        "product_count": 285,
+        "aisle_name": "feminine care"
+    },
+    "127": {
+        "impulse_index": 0.07475467203386768,
+        "product_count": 504,
+        "aisle_name": "body lotions soap"
+    },
+    "128": {
+        "impulse_index": 0.0545539068399201,
+        "product_count": 241,
+        "aisle_name": "tortillas flat bread"
+    },
+    "129": {
+        "impulse_index": 0.06095986930987139,
+        "product_count": 386,
+        "aisle_name": "frozen appetizers sides"
+    },
+    "130": {
+        "impulse_index": 0.06003636530176883,
+        "product_count": 303,
+        "aisle_name": "hot cereal pancake mixes"
+    },
+    "131": {
+        "impulse_index": 0.06290923963706858,
+        "product_count": 457,
+        "aisle_name": "dry pasta"
+    },
+    "132": {
+        "impulse_index": 0.0877123957082204,
+        "product_count": 178,
+        "aisle_name": "beauty"
+    },
+    "133": {
+        "impulse_index": 0.07927846080903564,
+        "product_count": 172,
+        "aisle_name": "muscles joints pain relief"
+    },
+    "134": {
+        "impulse_index": 0.06566097513947651,
+        "product_count": 95,
+        "aisle_name": "specialty wines champagnes"
+    }
+}

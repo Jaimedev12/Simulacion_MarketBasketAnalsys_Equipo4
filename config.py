@@ -1,6 +1,6 @@
 # Configuración del proyecto
 DATA_DIR = "data"
-AISLE_INFO_FILENAME = "aisle_info"
+AISLE_INFO_FILENAME = "aisle_info_scaled"
 
 LAYOUT_FILE = f"{DATA_DIR}/example_layout.json"
 AISLE_INFO_FILE = f"{DATA_DIR}/{AISLE_INFO_FILENAME}.json"

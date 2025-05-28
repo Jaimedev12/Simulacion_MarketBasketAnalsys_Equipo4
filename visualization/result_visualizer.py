@@ -121,11 +121,33 @@ class ResultVisualizer:
         def create_impulse_grid(grid):
             impulse_grid = np.zeros_like(grid, dtype=float)
             
+            # First pass: collect all valid impulse index values to find min/max
+            all_impulse_values = []
+            for aisle_id_str, aisle_data in self.aisle_info.items():
+                if 'impulse_index' in aisle_data:
+                    all_impulse_values.append(aisle_data['impulse_index'])
+            
+            # If we have values, calculate min and max for normalization
+            if all_impulse_values:
+                min_impulse = min(all_impulse_values)
+                max_impulse = max(all_impulse_values)
+                impulse_range = max_impulse - min_impulse
+            else:
+                # Default values if no impulse data found
+                min_impulse = 0
+                impulse_range = 1  # Avoid division by zero
+            
+            # Second pass: build the grid with normalized values
             for i in range(grid.shape[0]):
                 for j in range(grid.shape[1]):
                     aisle_id = grid[i, j]
                     if aisle_id > 0 and str(aisle_id) in self.aisle_info:
-                        impulse_grid[i, j] = self.aisle_info[str(aisle_id)].get('impulse_index', 0)
+                        raw_value = self.aisle_info[str(aisle_id)].get('impulse_index', 0)
+                        # Normalize to 0-1 range
+                        if impulse_range > 0:
+                            impulse_grid[i, j] = (raw_value - min_impulse) / impulse_range
+                        else:
+                            impulse_grid[i, j] = 0
                     else:
                         # Keep special values for entrance/exit
                         if aisle_id < 0:
