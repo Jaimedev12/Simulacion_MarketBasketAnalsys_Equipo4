@@ -179,6 +179,79 @@ def gen_central_plaza_layout() -> SupermarketGrid:
     return super_grid
 
 
+def gen_serpentine_layout() -> SupermarketGrid:
+    """
+    Generate a supermarket layout with a single serpentine path from entrance to exit,
+    placing aisles on both sides of the path, ensuring all are accessible.
+    """
+    categorized = separate_by_category()
+    all_aisles = []
+    for cat in categorized:
+        all_aisles.extend([int(aisle_id) for aisle_id, _ in categorized[cat]])
+    total_aisles = len(all_aisles)
+
+    shelf_width = 3
+    path_width = 1
+    aisles_per_row = max(2, total_aisles // 10)  # Tune for density
+    rows = (total_aisles // (2 * aisles_per_row)) * 2 + 6  # +6 for entrance/exit and buffer
+    cols = aisles_per_row * (shelf_width + path_width) + 4  # +4 for path and buffer
+
+    grid = np.zeros((rows, cols), dtype=int)
+
+    # Entrance at top center, exit at bottom center
+    entrance_col = cols // 2
+    grid[0][entrance_col] = -2
+    grid[rows - 1][entrance_col] = -1
+
+    ai = 0
+    # Build the serpentine path and place shelves adjacent to it
+    for row in range(2, rows - 2, 2):  # Even rows: path, Odd rows: shelves
+        if ((row // 2) % 2) == 0:
+            # Path goes left to right
+            for c in range(1, cols - 1):
+                grid[row][c] = 0  # Path cell
+                # Place shelf to the left of the path
+                if c - shelf_width >= 0 and ai < total_aisles:
+                    if all(grid[row - 1][c - w] == 0 for w in range(shelf_width)):
+                        for w in range(shelf_width):
+                            grid[row - 1][c - w] = all_aisles[ai]
+                        ai += 1
+                # Place shelf to the right of the path
+                if c + 1 + shelf_width <= cols and ai < total_aisles:
+                    if all(grid[row + 1][c + w] == 0 for w in range(1, shelf_width + 1)):
+                        for w in range(1, shelf_width + 1):
+                            grid[row + 1][c + w] = all_aisles[ai]
+                        ai += 1
+        else:
+            # Path goes right to left
+            for c in range(cols - 2, 0, -1):
+                grid[row][c] = 0  # Path cell
+                # Place shelf to the right of the path
+                if c + 1 + shelf_width <= cols and ai < total_aisles:
+                    if all(grid[row - 1][c + w] == 0 for w in range(1, shelf_width + 1)):
+                        for w in range(1, shelf_width + 1):
+                            grid[row - 1][c + w] = all_aisles[ai]
+                        ai += 1
+                # Place shelf to the left of the path
+                if c - shelf_width >= 0 and ai < total_aisles:
+                    if all(grid[row + 1][c - w] == 0 for w in range(shelf_width)):
+                        for w in range(shelf_width):
+                            grid[row + 1][c - w] = all_aisles[ai]
+                        ai += 1
+        if ai >= total_aisles:
+            break
+
+    grid_input = GridInput(
+        rows=rows,
+        cols=cols,
+        grid=grid.tolist(),
+        entrance=(0, entrance_col),
+        exit=(rows - 1, entrance_col),
+    )
+    super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
+    return super_grid
+
+
 def separate_by_category():
     with open(cfg.AISLE_INFO_FILE, "r") as file:
         aisles_data = json.load(file)
