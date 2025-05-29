@@ -562,14 +562,14 @@ def separate_by_category():
                 categorized["misc nonfood"].append((aisle_id, aisle_name))
 
     # Print summary
-    for cat, aisles in categorized.items():
-        print(f"\nCategory: {cat} ({len(aisles)} aisles)")
-        for aisle_id, aisle_name in aisles:
-            print(f"  {aisle_id}: {aisle_name}")
+    # for cat, aisles in categorized.items():
+    #     print(f"\nCategory: {cat} ({len(aisles)} aisles)")
+    #     for aisle_id, aisle_name in aisles:
+    #         print(f"  {aisle_id}: {aisle_name}")
 
-    print("-" * 40)
-    print("Total aisles:", len(aisles_data))
-    print("Total new aisles:", sum(len(aisles) for aisles in categorized.values()))
+    # print("-" * 40)
+    # print("Total aisles:", len(aisles_data))
+    # print("Total new aisles:", sum(len(aisles) for aisles in categorized.values()))
     return categorized
 
 
