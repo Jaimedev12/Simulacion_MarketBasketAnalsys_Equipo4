@@ -14,6 +14,7 @@ from typing import List, Dict, Tuple, Set, Optional
 from utils.helpers import read_aisle_info, validate_layout
 from optimization.neighborhood import swap_n_shelves
 
+
 def display_layout(layout: SupermarketGrid):
     """
     Desplegar la distribución de la tienda en la consola.
@@ -28,15 +29,16 @@ def display_layout(layout: SupermarketGrid):
             elif cell == -2:
                 print("{:^3}".format("C"), end=" ")
             else:
-                print("{:^3}".format(cell), end=" ")
+                print("{:^3}".format(cell.aisle_id), end=" ")
         print()
+
 
 def plot_grid(grid: SupermarketGrid):
     """Visualiza el layout del supermercado"""
     rows = grid.rows
     cols = grid.cols
     matrix = np.zeros((rows, cols))
-    
+
     for x in range(rows):
         for y in range(cols):
             cell = grid.grid[x][y]
@@ -48,11 +50,12 @@ def plot_grid(grid: SupermarketGrid):
                 matrix[x][y] = 2.0
             else:
                 matrix[x][y] = 3.0
-    
+
     plt.imshow(matrix, cmap="viridis")
     plt.colorbar()
     plt.title("Distribución de la Tienda")
     plt.show()
+
 
 def plot_grid_with_ids(grid: SupermarketGrid):
     """
@@ -62,6 +65,7 @@ def plot_grid_with_ids(grid: SupermarketGrid):
     fig, ax = plt.subplots(figsize=(10, 10))
     generate_individual_plot(grid, ax=ax)
     plt.show()
+
 
 def plot_grid_difference(grid1: SupermarketGrid, grid2: SupermarketGrid):
     """
@@ -104,6 +108,7 @@ def plot_grid_difference(grid1: SupermarketGrid, grid2: SupermarketGrid):
     plt.tight_layout()
     plt.show()
 
+
 def plot_multiple_grids(grids: List[SupermarketGrid], names):
     """
     Visualiza múltiples cuadrículas en una sola figura.
@@ -119,6 +124,7 @@ def plot_multiple_grids(grids: List[SupermarketGrid], names):
     plt.tight_layout()
     plt.show()
 
+
 def generate_individual_plot(grid: SupermarketGrid, ax=None) -> AxesImage:
     """
     Visualiza el layout del supermercado con los IDs de las estanterías usando colores personalizados.
@@ -128,15 +134,15 @@ def generate_individual_plot(grid: SupermarketGrid, ax=None) -> AxesImage:
     rows = grid.rows
     cols = grid.cols
     matrix = np.zeros((rows, cols))
-    
+
     # Define custom colors for specific values
     custom_colors = {
-        0: "white",    # Pasillo
+        0: "white",  # Pasillo
     }
     # Generate distinct colors for shelf IDs
     unique_ids = sorted(set(cell.aisle_id for row in grid.grid for cell in row if not cell.is_walkable))
     for i, shelf_id in enumerate(unique_ids):
-        color_tuple = plt.get_cmap('tab20')(i % 20)  # Use tab20 for shelf IDs
+        color_tuple = plt.get_cmap("tab20")(i % 20)  # Use tab20 for shelf IDs
         custom_colors[shelf_id] = mcolors.to_hex(color_tuple)  # Convert to hex color
 
     # Create a colormap from the custom colors
@@ -158,7 +164,7 @@ def generate_individual_plot(grid: SupermarketGrid, ax=None) -> AxesImage:
     if ax is None:
         fig, ax = plt.subplots()
         plt.close(fig)  # Close the figure to avoid displaying it immediately
-        
+
     im = ax.imshow(matrix, cmap=cmap, interpolation="nearest")
 
     # ax.set_title("Distribución de la Tienda")

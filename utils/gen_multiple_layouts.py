@@ -181,8 +181,13 @@ def gen_central_plaza_layout() -> SupermarketGrid:
 
 def gen_serpentine_layout() -> SupermarketGrid:
     """
-    Generate a supermarket layout with a single serpentine path from entrance to exit,
-    placing aisles on both sides of the path, ensuring all are accessible.
+    Generate a supermarket layout with a serpentine/maze pattern:
+    - First two rows: paths (all zeros)
+    - Next two rows: aisles flush left (space at right)
+    - Next two rows: paths
+    - Next two rows: aisles flush right (space at left)
+    - Repeat as needed
+    The number of columns is a multiple of 3 + 1 (aisle width + path).
     """
     categorized = separate_by_category()
     all_aisles = []
@@ -191,62 +196,61 @@ def gen_serpentine_layout() -> SupermarketGrid:
     total_aisles = len(all_aisles)
 
     shelf_width = 3
-    path_width = 1
-    aisles_per_row = max(2, total_aisles // 10)  # Tune for density
-    rows = (total_aisles // (2 * aisles_per_row)) * 2 + 6  # +6 for entrance/exit and buffer
-    cols = aisles_per_row * (shelf_width + path_width) + 4  # +4 for path and buffer
+    max_aisles_per_row = 10
+    aisles_per_row = min(max_aisles_per_row, (total_aisles + 1) // 2)
+    n_cols = aisles_per_row * shelf_width + 1  # +1 for the path
 
-    grid = np.zeros((rows, cols), dtype=int)
+    # Estimate number of aisle rows needed
+    aisle_rows_needed = (total_aisles + aisles_per_row - 1) // aisles_per_row
+    # Each block is 2 path rows + 2 aisle rows
+    block_rows = 4
+    n_blocks = (aisle_rows_needed + 1) // 2
+    n_rows = n_blocks * block_rows + 2
 
-    # Entrance at top center, exit at bottom center
-    entrance_col = cols // 2
-    grid[0][entrance_col] = -2
-    grid[rows - 1][entrance_col] = -1
+    grid = np.zeros((n_rows, n_cols), dtype=int)
+    entrance_col = n_cols // 2
+    grid[0][entrance_col] = -2  # Entrance
+    grid[n_rows - 1][entrance_col] = -1  # Exit
 
     ai = 0
-    # Build the serpentine path and place shelves adjacent to it
-    for row in range(2, rows - 2, 2):  # Even rows: path, Odd rows: shelves
-        if ((row // 2) % 2) == 0:
-            # Path goes left to right
-            for c in range(1, cols - 1):
-                grid[row][c] = 0  # Path cell
-                # Place shelf to the left of the path
-                if c - shelf_width >= 0 and ai < total_aisles:
-                    if all(grid[row - 1][c - w] == 0 for w in range(shelf_width)):
-                        for w in range(shelf_width):
-                            grid[row - 1][c - w] = all_aisles[ai]
-                        ai += 1
-                # Place shelf to the right of the path
-                if c + 1 + shelf_width <= cols and ai < total_aisles:
-                    if all(grid[row + 1][c + w] == 0 for w in range(1, shelf_width + 1)):
-                        for w in range(1, shelf_width + 1):
-                            grid[row + 1][c + w] = all_aisles[ai]
-                        ai += 1
+    row = 0
+    aisle_row_counter = 0
+    while ai < total_aisles and row < n_rows:
+        # Skip path rows
+        if row % 4 < 2:
+            row += 1
+            continue
+        # Alternate block every two aisle rows
+        block = (aisle_row_counter // 2) % 2  # 0: left aisles, 1: right aisles
+        if block == 0:
+            # Aisles flush left, space at right
+            c = 0
+            while c + shelf_width <= n_cols - 1 and ai < total_aisles:
+                for w in range(shelf_width):
+                    grid[row][c + w] = all_aisles[ai]
+                ai += 1
+                c += shelf_width
+            # Path at far right
+            grid[row][n_cols - 1] = 0
         else:
-            # Path goes right to left
-            for c in range(cols - 2, 0, -1):
-                grid[row][c] = 0  # Path cell
-                # Place shelf to the right of the path
-                if c + 1 + shelf_width <= cols and ai < total_aisles:
-                    if all(grid[row - 1][c + w] == 0 for w in range(1, shelf_width + 1)):
-                        for w in range(1, shelf_width + 1):
-                            grid[row - 1][c + w] = all_aisles[ai]
-                        ai += 1
-                # Place shelf to the left of the path
-                if c - shelf_width >= 0 and ai < total_aisles:
-                    if all(grid[row + 1][c - w] == 0 for w in range(shelf_width)):
-                        for w in range(shelf_width):
-                            grid[row + 1][c - w] = all_aisles[ai]
-                        ai += 1
-        if ai >= total_aisles:
-            break
+            print(f"Placing aisles in row {row} (block {block})")
+            # Aisles flush right, space at left
+            grid[row][0] = 0
+            c = 1
+            while c + shelf_width <= n_cols and ai < total_aisles:
+                for w in range(shelf_width):
+                    grid[row][c + w] = all_aisles[ai]
+                ai += 1
+                c += shelf_width
+        row += 1
+        aisle_row_counter += 1
 
     grid_input = GridInput(
-        rows=rows,
-        cols=cols,
+        rows=n_rows,
+        cols=n_cols,
         grid=grid.tolist(),
         entrance=(0, entrance_col),
-        exit=(rows - 1, entrance_col),
+        exit=(n_rows - 1, entrance_col),
     )
     super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
     return super_grid
@@ -318,7 +322,6 @@ def gen_category_rings_layout() -> SupermarketGrid:
     while ai < total_aisles:
         ring_perimeter = 4 * side
         aisles_in_ring = ring_perimeter // (shelf_width + path_width)
-        ring_aisles = min(aisles_in_ring, total_aisles - ai)
         ring_radius = side // 2 + ring_gap * ring_idx
         top = center[0] - ring_radius
         bottom = center[0] + ring_radius
@@ -561,16 +564,27 @@ def separate_by_category():
             else:
                 categorized["misc nonfood"].append((aisle_id, aisle_name))
 
-    # Print summary
-    # for cat, aisles in categorized.items():
-    #     print(f"\nCategory: {cat} ({len(aisles)} aisles)")
-    #     for aisle_id, aisle_name in aisles:
-    #         print(f"  {aisle_id}: {aisle_name}")
-
-    # print("-" * 40)
-    # print("Total aisles:", len(aisles_data))
-    # print("Total new aisles:", sum(len(aisles) for aisles in categorized.values()))
     return categorized
+
+
+def get_all_layouts():
+    """
+    Generate all predefined layouts.
+    """
+    island_layout = gen_island_category_layout()
+    central_plaza_layout = gen_central_plaza_layout()
+    serpentine_layout = gen_serpentine_layout()
+    category_rings_layout = gen_category_rings_layout()
+
+    # Clear console
+    print("\033c", end="")
+
+    return [
+        # {"name": "island_category", "layout": island_layout},
+        # {"name": "central_plaza", "layout": central_plaza_layout},
+        {"name": "serpentine", "layout": serpentine_layout},
+        # {"name": "category_rings", "layout": category_rings_layout},
+    ]
 
 
 if __name__ == "__main__":
