@@ -252,6 +252,147 @@ def gen_serpentine_layout() -> SupermarketGrid:
     return super_grid
 
 
+def get_categories_by_impulse(categorized, aisles_data):
+    """
+    Returns a list of categories sorted by total impulse_index (descending).
+    """
+    cat_impulse = {}
+    for cat in categorized:
+        total_impulse = sum(
+            aisles_data[aid]["impulse_index"] for aid, _ in categorized[cat] if "impulse_index" in aisles_data[aid]
+        )
+        cat_impulse[cat] = total_impulse
+    sorted_cats = sorted(
+        [cat for cat in categorized if len(categorized[cat]) > 0], key=lambda c: cat_impulse[c], reverse=True
+    )
+    return sorted_cats, cat_impulse
+
+
+def gen_category_rings_layout() -> SupermarketGrid:
+    """
+    Place aisles in concentric rings around a central plaza,
+    with the most impulsive categories closer to the center.
+    Rings are filled from inside out, continuing categories as needed.
+    """
+    # Load aisle data with impulse_index
+    with open(cfg.AISLE_INFO_FILE, "r") as file:
+        aisles_data = json.load(file)
+
+    categorized = separate_by_category()
+    sorted_cats, cat_impulse = get_categories_by_impulse(categorized, aisles_data)
+
+    shelf_width = 5
+    path_width = 1
+    ring_gap = 1
+    # 6 12
+    initial_side = 10  # Minimum side length for the innermost ring
+
+    # Flatten all aisles, sorted by impulse category order
+    all_aisles = []
+    for cat in sorted_cats:
+        all_aisles.extend([int(aid) for aid, _ in categorized[cat]])
+    total_aisles = len(all_aisles)
+
+    # Estimate max grid size needed
+    max_rings = 1
+    aisles_left = total_aisles
+    side = initial_side
+    while aisles_left > 0:
+        ring_perimeter = 4 * side
+        aisles_in_ring = ring_perimeter // (shelf_width + path_width)
+        aisles_left -= aisles_in_ring
+        side += 2 * (shelf_width + path_width + ring_gap)
+        max_rings += 1
+    grid_size = side + 10
+    rows = cols = grid_size
+    grid = np.zeros((rows, cols), dtype=int)
+    center = (rows // 2, cols // 2)
+
+    # Place entrance and exit at top and bottom center
+    grid[0][cols // 2] = -2
+    grid[rows - 1][cols // 2] = -1
+
+    ai = 0
+    ring_idx = 0
+    side = initial_side
+    while ai < total_aisles:
+        ring_perimeter = 4 * side
+        aisles_in_ring = ring_perimeter // (shelf_width + path_width)
+        ring_aisles = min(aisles_in_ring, total_aisles - ai)
+        ring_radius = side // 2 + ring_gap * ring_idx
+        top = center[0] - ring_radius
+        bottom = center[0] + ring_radius
+        left = center[1] - ring_radius
+        right = center[1] + ring_radius
+
+        # Defensive bounds check
+        if top < 0 or left < 0 or bottom >= rows or right >= cols:
+            break
+
+        placed = 0
+
+        # Top edge (left to right)
+        c = left
+        while c + shelf_width - 1 <= right and ai < total_aisles:
+            if all(grid[top][c + w] == 0 for w in range(shelf_width)):
+                for w in range(shelf_width):
+                    grid[top][c + w] = all_aisles[ai]
+                ai += 1
+                placed += 1
+                c += shelf_width + path_width
+            else:
+                c += 1  # Only move by 1 if can't place
+
+        # Right edge (top to bottom)
+        r = top + 1
+        while r + shelf_width - 1 <= bottom and ai < total_aisles:
+            if all(grid[r + w][right] == 0 for w in range(shelf_width)):
+                for w in range(shelf_width):
+                    grid[r + w][right] = all_aisles[ai]
+                ai += 1
+                placed += 1
+                r += shelf_width + path_width
+            else:
+                r += 1
+
+        # Bottom edge (right to left)
+        c = right - 1
+        while c - shelf_width + 1 >= left and ai < total_aisles:
+            if all(grid[bottom][c - w] == 0 for w in range(shelf_width)):
+                for w in range(shelf_width):
+                    grid[bottom][c - w] = all_aisles[ai]
+                ai += 1
+                placed += 1
+                c -= shelf_width + path_width
+            else:
+                c -= 1
+
+        # Left edge (bottom to top)
+        r = bottom - 1
+        while r - shelf_width + 1 > top and ai < total_aisles:
+            if all(grid[r - w][left] == 0 for w in range(shelf_width)):
+                for w in range(shelf_width):
+                    grid[r - w][left] = all_aisles[ai]
+                ai += 1
+                placed += 1
+                r -= shelf_width + path_width
+            else:
+                r -= 1
+
+        ring_idx += 1
+        side += 2 * (shelf_width + path_width + ring_gap)
+
+    grid_input = GridInput(
+        rows=rows,
+        cols=cols,
+        grid=grid.tolist(),
+        entrance=(0, cols // 2),
+        exit=(rows - 1, cols // 2),
+    )
+    super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
+    return super_grid
+
+
 def separate_by_category():
     with open(cfg.AISLE_INFO_FILE, "r") as file:
         aisles_data = json.load(file)
