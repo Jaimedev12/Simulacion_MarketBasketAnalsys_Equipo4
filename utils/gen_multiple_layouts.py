@@ -580,10 +580,10 @@ def get_all_layouts():
     print("\033c", end="")
 
     return [
-        # {"name": "island_category", "layout": island_layout},
-        # {"name": "central_plaza", "layout": central_plaza_layout},
+        {"name": "island_category", "layout": island_layout},
+        {"name": "central_plaza", "layout": central_plaza_layout},
         {"name": "serpentine", "layout": serpentine_layout},
-        # {"name": "category_rings", "layout": category_rings_layout},
+        {"name": "category_rings", "layout": category_rings_layout},
     ]
 
 
