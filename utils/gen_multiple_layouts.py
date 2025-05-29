@@ -3,6 +3,7 @@ import numpy as np
 from core.grid import SupermarketGrid, GridInput
 import config as cfg
 import math
+import random
 
 
 def gen_island_category_layout() -> SupermarketGrid:
@@ -67,6 +68,113 @@ def gen_island_category_layout() -> SupermarketGrid:
                 break
 
     grid_input = GridInput(rows=rows, cols=cols, grid=grid.tolist(), entrance=(0, 5), exit=(0, cols - 6))
+    super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
+    return super_grid
+
+
+def gen_central_plaza_layout() -> SupermarketGrid:
+    """
+    Generate a supermarket layout with a central plaza and categories as spokes radiating out.
+    All aisles are accessible from the entrance, through the plaza, to the exit.
+    Dynamically increases grid size if not all aisles can be placed.
+    """
+    categorized = separate_by_category()
+    categories = [cat for cat in categorized if len(categorized[cat]) > 0]
+    num_spokes = len(categories)
+
+    # Layout parameters
+    shelf_width = 3
+    path_width = 1
+    spoke_gap = 4
+    max_aisles_per_spoke = max(len(categorized[cat]) for cat in categories)
+    aisles_per_row = math.ceil(math.sqrt(max_aisles_per_spoke)) + 2  # Add extra space
+
+    # Try increasing plaza/grid size until all aisles are placed or max attempts reached
+    max_attempts = 5
+    for attempt in range(max_attempts):
+        plaza_size = 11 + attempt * 4  # Increase plaza size each attempt
+        rows = plaza_size + 2 * (aisles_per_row * (1 + path_width) + spoke_gap)
+        cols = plaza_size + 2 * (aisles_per_row * (shelf_width + path_width) + spoke_gap)
+        grid = np.zeros((rows, cols), dtype=int)
+
+        # Plaza coordinates
+        plaza_r0 = (rows - plaza_size) // 2
+        plaza_c0 = (cols - plaza_size) // 2
+
+        # Place entrance and exit at opposite sides of the plaza
+        grid[plaza_r0][plaza_c0 + plaza_size // 2] = -2  # Entrance (top center of plaza)
+        grid[plaza_r0 + plaza_size - 1][plaza_c0 + plaza_size // 2] = -1  # Exit (bottom center of plaza)
+
+        angle_step = 2 * math.pi / num_spokes
+        placed_summary = {}
+        total_placed = 0
+
+        random.shuffle(categories)
+
+        for idx, cat in enumerate(categories):
+            aisles = [int(aisle_id) for aisle_id, _ in categorized[cat]]
+            angle = idx * angle_step
+            center_r = plaza_r0 + plaza_size // 2
+            center_c = plaza_c0 + plaza_size // 2
+            dr = round(math.sin(angle))
+            dc = round(math.cos(angle))
+            r = center_r + dr * (plaza_size // 2 + 1)
+            c = center_c + dc * (plaza_size // 2 + 1)
+            ai = 0
+            for row in range(aisles_per_row):
+                rr = r + dr * row * (1 + path_width)
+                cc = c + dc * row * (shelf_width + path_width)
+                for col in range(aisles_per_row):
+                    if abs(dr) > abs(dc):  # Vertical spoke
+                        rrr = rr
+                        ccc = cc + (col - aisles_per_row // 2) * (shelf_width + path_width)
+                    else:  # Horizontal spoke
+                        rrr = rr + (col - aisles_per_row // 2) * (1 + path_width)
+                        ccc = cc
+
+                    # Check bounds for full shelf
+                    if 0 <= rrr < rows - 1 and 0 <= ccc <= cols - 3 and ai < len(aisles):
+                        # Check if all three cells are empty
+                        if grid[rrr][ccc] == 0 and grid[rrr][ccc + 1] == 0 and grid[rrr][ccc + 2] == 0:
+                            grid[rrr][ccc] = aisles[ai]
+                            grid[rrr][ccc + 1] = aisles[ai]
+                            grid[rrr][ccc + 2] = aisles[ai]
+                            print(f"Placed aisle {aisles[ai]} for category '{cat}' at ({rrr},{ccc})-({rrr},{ccc + 2})")
+                            ai += 1
+                        else:
+                            print(
+                                f"WARNING: Overlap detected, could not place aisle {aisles[ai]} for category '{cat}' at ({rrr},{ccc})"
+                            )
+                    elif ai < len(aisles):
+                        print(
+                            f"WARNING: Could not place full shelf for aisle {aisles[ai]} of category '{cat}' at ({rrr},{ccc})"
+                        )
+                    if ai >= len(aisles):
+                        break
+                if ai >= len(aisles):
+                    break
+            placed_summary[cat] = ai
+            total_placed += ai
+
+        # Print summary of placement
+        print(f"\nCentral Plaza Layout Placement Summary (attempt {attempt + 1}):")
+        for cat in categories:
+            print(f"  {cat}: {placed_summary[cat]} aisles placed (of {len(categorized[cat])})")
+        print(f"Total aisles placed: {total_placed} (of {sum(len(categorized[cat]) for cat in categories)})\n")
+
+        # If all aisles placed, break
+        if total_placed == sum(len(categorized[cat]) for cat in categories):
+            break
+        else:
+            print("Not all aisles placed, increasing grid/plaza size and retrying...\n")
+
+    grid_input = GridInput(
+        rows=rows,
+        cols=cols,
+        grid=grid.tolist(),
+        entrance=(plaza_r0, plaza_c0 + plaza_size // 2),
+        exit=(plaza_r0 + plaza_size - 1, plaza_c0 + plaza_size // 2),
+    )
     super_grid = SupermarketGrid.from_dict(grid_input, aisle_info_file=cfg.AISLE_INFO_FILE)
     return super_grid
 
