@@ -581,8 +581,8 @@ def get_all_layouts():
 
     return [
         {"name": "island_category", "layout": island_layout},
-        {"name": "central_plaza", "layout": central_plaza_layout},
-        {"name": "serpentine", "layout": serpentine_layout},
+        # {"name": "central_plaza", "layout": central_plaza_layout},
+        # {"name": "serpentine", "layout": serpentine_layout},
         {"name": "category_rings", "layout": category_rings_layout},
     ]
 

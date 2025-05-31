@@ -93,11 +93,11 @@ def main():
     selected_customers = random.sample(customers, cfg.CUSTOMER_COUNT)
 
     print(len(sim_configs), "simulations to run")
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(run_simulation, sim_config, selected_customers) for sim_config in sim_configs]
-        concurrent.futures.wait(futures)
-    # for sim_config in sim_configs:
-    #     run_simulation(sim_config, selected_customers)
+    # with concurrent.futures.ProcessPoolExecutor() as executor:
+    #     futures = [executor.submit(run_simulation, sim_config, selected_customers) for sim_config in sim_configs]
+    #     concurrent.futures.wait(futures)
+    for sim_config in sim_configs:
+        run_simulation(sim_config, selected_customers)
 
 
 if __name__ == "__main__":
