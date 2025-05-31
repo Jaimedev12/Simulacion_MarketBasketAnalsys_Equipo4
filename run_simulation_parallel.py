@@ -57,7 +57,6 @@ def gen_simulations() -> List[SimulationConfig]:
                 swap_walkable=False,
                 swap_whole_aisles=True,
                 swap_amount=1,
-                tabu_iterations=3,
             )
         )
 
